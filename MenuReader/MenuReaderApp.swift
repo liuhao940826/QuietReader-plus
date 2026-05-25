@@ -47,12 +47,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = buildMenu()
         
         if store.displayMode == .center {
-            // Center mode: use native positioning (menu aligns to status item)
             statusItem.menu = menu
             button.performClick(nil)
             statusItem.menu = nil
         } else {
-            // Right mode: pop up at mouse position with independent width
             guard let window = button.window else { return }
             let mouseInScreen = NSEvent.mouseLocation
             let mouseInWindow = window.convertPoint(fromScreen: mouseInScreen)
@@ -65,12 +63,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let button = statusItem.button else { return }
         
         if store.isHidden || store.displayMode == .center {
+            statusItem.length = NSStatusItem.variableLength
             button.title = ""
             button.image = NSImage(systemSymbolName: "book.fill", accessibilityDescription: "MenuReader")
         } else {
             button.image = nil
             button.title = store.currentText
             button.font = NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize(for: .regular), weight: .regular)
+            // Fixed width based on pageSize to prevent jumping
+            statusItem.length = CenterDisplayWindow.widthForPageSize(store.pageSize)
         }
     }
 
@@ -192,6 +193,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.submenu = submenu
         return item
     }
+    
+    // MARK: - Actions
     
     // MARK: - Actions
     
