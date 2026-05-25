@@ -103,18 +103,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         
         menu.addItem(.separator())
         
-        // Group 2: Settings submenus
-        menu.addItem(buildDisplayModeSubmenu())
-        if store.displayMode == .center && NSScreen.screens.count > 1 {
-            menu.addItem(buildScreenSubmenu())
-        }
+        // Group 2: Reading settings
         menu.addItem(buildPageSizeSubmenu())
         menu.addItem(buildIntervalSubmenu())
         menu.addItem(buildBookSubmenu())
         
         menu.addItem(.separator())
         
-        // Group 3: Settings & Quit
+        // Group 3: Display settings
+        menu.addItem(buildDisplayModeSubmenu())
+        if store.displayMode == .center && NSScreen.screens.count > 1 {
+            menu.addItem(buildScreenSubmenu())
+        }
+        
+        menu.addItem(.separator())
+        
+        // Group 4: Settings & Quit
         let settingsItem = NSMenuItem(title: "设置", action: #selector(openSettings), keyEquivalent: "")
         settingsItem.target = self
         menu.addItem(settingsItem)
