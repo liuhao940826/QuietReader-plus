@@ -19,8 +19,8 @@ final class CenterDisplayWindow {
     }
     
     static func widthForPageSize(_ pageSize: Int) -> CGFloat {
-        // Monospaced 12pt: CJK characters are ~12pt wide each
-        return CGFloat(pageSize) * 12.0 + 16.0
+        let charWidth = NSFont.systemFontSize(for: .regular)
+        return CGFloat(pageSize) * charWidth + 16.0
     }
     
     func show(text: String) {
@@ -143,9 +143,13 @@ struct CenterTextView: View {
     
     var body: some View {
         Text(text)
-            .font(.system(size: 12, design: .monospaced))
+            .font(.menuBarExtra)
             .foregroundColor(.primary)
             .lineLimit(1)
             .frame(width: width, height: 22)
     }
+}
+
+extension Font {
+    static let menuBarExtra: Font = .system(size: NSFont.systemFontSize(for: .regular), design: .monospaced)
 }

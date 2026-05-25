@@ -91,11 +91,11 @@ struct GeneralSettingsView: View {
                 
                 Picker("每页字数", selection: $store.pageSize) {
                     Text("10字").tag(10)
-                    Text("15字").tag(15)
                     Text("20字").tag(20)
-                    Text("25字").tag(25)
                     Text("30字").tag(30)
                     Text("40字").tag(40)
+                    Text("50字").tag(50)
+                    Text("60字").tag(60)
                 }
             }
         }

@@ -17,7 +17,7 @@ struct MenuReaderApp: App {
                     .symbolRenderingMode(.monochrome)
             } else {
                 Text(store.currentText)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.menuBarExtra)
                     .lineLimit(1)
                     .frame(width: 150, alignment: .leading)
             }
