@@ -1,6 +1,4 @@
-import AppKit
 import Foundation
-import UniformTypeIdentifiers
 
 enum ReaderStorage {
     private static let libraryKey = "reader.library"
@@ -24,16 +22,6 @@ enum ReaderStorage {
     }
 }
 
-enum TextBookImporter {
-    static func selectFiles() -> [URL] {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.plainText]
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        return panel.runModal() == .OK ? panel.urls : []
-    }
-}
 
 enum TextBookLoader {
     static func loadText(from path: String) throws -> String {

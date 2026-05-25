@@ -10,8 +10,8 @@ final class ReaderStore: ObservableObject {
     
     @Published private(set) var currentText: String = "📖 无书籍"
     @Published private(set) var isPlaying: Bool = false
-    @Published private(set) var currentPage: Int = 0
-    @Published private(set) var totalPages: Int = 0
+    private var currentPage: Int = 0
+    private var totalPages: Int = 0
     @Published private(set) var currentBookIndex: Int = 0
     @Published private(set) var books: [Book] = []
     @Published private(set) var isHidden: Bool = false
@@ -32,6 +32,8 @@ final class ReaderStore: ObservableObject {
     private var pages: [SlicedPage] = []
     private var timer: Timer?
     private var wasPlayingBeforeHidden: Bool = false
+    private var bookSwitchTask: Task<Void, Never>?
+    private var persistTask: Task<Void, Never>?
 
     var hasPages: Bool { !pages.isEmpty }
 
@@ -86,7 +88,7 @@ final class ReaderStore: ObservableObject {
             refreshBookMetadata()
         }
 
-        persistLibrary()
+        persistLibrary(immediate: true)
     }
 
     func removeBook(at index: Int) {
@@ -101,13 +103,13 @@ final class ReaderStore: ObservableObject {
             pages = []
             currentText = "📖 无书籍"
             syncCenterWindow()
-            persistLibrary()
+            persistLibrary(immediate: true)
             return
         }
 
         currentBookIndex = min(currentBookIndex, books.count - 1)
         loadCurrentBook()
-        persistLibrary()
+        persistLibrary(immediate: true)
     }
 
     func selectBook(at index: Int) {
@@ -119,19 +121,21 @@ final class ReaderStore: ObservableObject {
         stopPlayback()
         currentBookIndex = index
         
-        // Show book name for 2 seconds
+        // Show book name for 1.5 seconds
         currentText = "📖 \(books[currentBookIndex].name)"
         syncCenterWindow()
         
-        Task { @MainActor in
+        bookSwitchTask?.cancel()
+        bookSwitchTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard !Task.isCancelled else { return }
             loadCurrentBook()
             if wasPlaying {
                 startPlayback()
             }
         }
         
-        persistLibrary()
+        persistLibrary(immediate: true)
     }
 
     func nextBook() {
@@ -144,8 +148,8 @@ final class ReaderStore: ObservableObject {
     func previousBook() {
         guard !isHidden else { return }
         guard !books.isEmpty else { return }
-        let nextIndex = (currentBookIndex - 1 + books.count) % books.count
-        selectBook(at: nextIndex)
+        let prevIndex = (currentBookIndex - 1 + books.count) % books.count
+        selectBook(at: prevIndex)
     }
 
     func nextPage() {
@@ -288,7 +292,19 @@ final class ReaderStore: ObservableObject {
         }
     }
 
-    private func persistLibrary() {
-        ReaderStorage.saveLibrary(.init(books: books, currentBookIndex: currentBookIndex))
+    private func persistLibrary(immediate: Bool = false) {
+        if immediate {
+            persistTask?.cancel()
+            persistTask = nil
+            ReaderStorage.saveLibrary(.init(books: books, currentBookIndex: currentBookIndex))
+            return
+        }
+        guard persistTask == nil else { return }
+        persistTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled else { return }
+            self.persistTask = nil
+            ReaderStorage.saveLibrary(.init(books: self.books, currentBookIndex: self.currentBookIndex))
+        }
     }
 }

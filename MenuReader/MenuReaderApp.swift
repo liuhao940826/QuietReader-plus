@@ -30,11 +30,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         
         HotKeyManager.shared.setup(store: store)
         
-        // Observe store changes to update label
-        store.$currentText
-            .combineLatest(store.$isHidden, store.$displayMode)
+        // Observe any store change to update label
+        store.objectWillChange
             .receive(on: RunLoop.main)
-            .sink { [weak self] _, _, _ in
+            .sink { [weak self] _ in
                 self?.updateStatusItemLabel()
             }
             .store(in: &cancellables)
@@ -193,8 +192,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.submenu = submenu
         return item
     }
-    
-    // MARK: - Actions
     
     // MARK: - Actions
     
