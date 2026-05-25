@@ -36,9 +36,14 @@ struct MenuBarContent: View {
             store.toggleVisibility()
         }
         
-        Button(store.displayMode == .center ? "切换到右侧" : "切换到居中") {
-            store.toggleDisplayMode()
+        Picker("显示位置", selection: Binding(
+            get: { store.displayMode },
+            set: { store.displayMode = $0 }
+        )) {
+            Text("右侧").tag(ReaderStore.DisplayMode.right)
+            Text("居中").tag(ReaderStore.DisplayMode.center)
         }
+        .pickerStyle(.menu)
 
         Button(store.isPlaying ? "暂停" : "继续") {
             store.togglePlayback()
