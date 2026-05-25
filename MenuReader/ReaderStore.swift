@@ -14,7 +14,6 @@ final class ReaderStore: ObservableObject {
 
     private var pages: [String] = []
     private var timer: Timer?
-    private var wasPlayingBeforeHide: Bool = false
 
     var hasPages: Bool { !pages.isEmpty }
 
@@ -83,14 +82,12 @@ final class ReaderStore: ObservableObject {
     }
 
     func selectBook(at index: Int) {
+        guard !isHidden else { return }
         guard books.indices.contains(index), index != currentBookIndex else { return }
         saveCurrentProgress()
         
         let wasPlaying = isPlaying
-        if isPlaying {
-            stopPlayback()
-        }
-        
+        stopPlayback()
         currentBookIndex = index
         
         // Show book name for 2 seconds
@@ -108,18 +105,21 @@ final class ReaderStore: ObservableObject {
     }
 
     func nextBook() {
+        guard !isHidden else { return }
         guard !books.isEmpty else { return }
         let nextIndex = (currentBookIndex + 1) % books.count
         selectBook(at: nextIndex)
     }
 
     func previousBook() {
+        guard !isHidden else { return }
         guard !books.isEmpty else { return }
         let nextIndex = (currentBookIndex - 1 + books.count) % books.count
         selectBook(at: nextIndex)
     }
 
     func nextPage() {
+        guard !isHidden else { return }
         guard !pages.isEmpty else { return }
         currentPage = (currentPage + 1) % totalPages
         updateDisplay()
@@ -127,6 +127,7 @@ final class ReaderStore: ObservableObject {
     }
 
     func previousPage() {
+        guard !isHidden else { return }
         guard !pages.isEmpty else { return }
         currentPage = (currentPage - 1 + totalPages) % totalPages
         updateDisplay()
@@ -134,10 +135,7 @@ final class ReaderStore: ObservableObject {
     }
 
     func togglePlayback() {
-        if isHidden {
-            isHidden = false
-            wasPlayingBeforeHide = false
-        }
+        guard !isHidden else { return }
         isPlaying ? stopPlayback() : startPlayback()
     }
 
@@ -152,14 +150,7 @@ final class ReaderStore: ObservableObject {
         isHidden.toggle()
         
         if isHidden {
-            wasPlayingBeforeHide = isPlaying
-            if isPlaying {
-                stopPlayback()
-            }
-        } else {
-            if wasPlayingBeforeHide {
-                startPlayback()
-            }
+            stopPlayback()
         }
     }
 

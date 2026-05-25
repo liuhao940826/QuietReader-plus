@@ -32,19 +32,27 @@ struct MenuBarContent: View {
     private let intervalOptions: [TimeInterval] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
     var body: some View {
+        Button(store.isHidden ? "显示" : "隐藏") {
+            store.toggleVisibility()
+        }
+        .keyboardShortcut("o", modifiers: [.option, .control])
+
         Button(store.isPlaying ? "暂停" : "继续") {
             store.togglePlayback()
         }
+        .keyboardShortcut("p", modifiers: [.option, .control])
         .disabled(!store.hasPages)
 
         Button("上一页") {
             store.previousPage()
         }
+        .keyboardShortcut("h", modifiers: [.option, .control])
         .disabled(!store.hasPages)
 
         Button("下一页") {
             store.nextPage()
         }
+        .keyboardShortcut("l", modifiers: [.option, .control])
         .disabled(!store.hasPages)
 
         Divider()
