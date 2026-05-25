@@ -62,16 +62,18 @@ struct MenuBarContent: View {
         }
         .pickerStyle(.menu)
 
-        Picker("书籍选择", selection: Binding(
-            get: { store.currentBookIndex },
-            set: { store.selectBook(at: $0) }
+        Picker("每页字数", selection: Binding(
+            get: { store.pageSize },
+            set: { store.pageSize = $0 }
         )) {
-            ForEach(Array(store.books.enumerated()), id: \.element.id) { index, book in
-                Text(book.name).tag(index)
-            }
+            Text("10字").tag(10)
+            Text("20字").tag(20)
+            Text("30字").tag(30)
+            Text("40字").tag(40)
+            Text("50字").tag(50)
+            Text("60字").tag(60)
         }
         .pickerStyle(.menu)
-        .disabled(store.books.isEmpty)
 
         Picker("翻页间隔", selection: Binding(
             get: { store.pageInterval },
@@ -82,6 +84,17 @@ struct MenuBarContent: View {
             }
         }
         .pickerStyle(.menu)
+
+        Picker("书籍选择", selection: Binding(
+            get: { store.currentBookIndex },
+            set: { store.selectBook(at: $0) }
+        )) {
+            ForEach(Array(store.books.enumerated()), id: \.element.id) { index, book in
+                Text(book.name).tag(index)
+            }
+        }
+        .pickerStyle(.menu)
+        .disabled(store.books.isEmpty)
 
         Divider()
 

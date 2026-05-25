@@ -97,6 +97,15 @@ struct GeneralSettingsView: View {
                     Text("50字").tag(50)
                     Text("60字").tag(60)
                 }
+                
+                Picker("翻页间隔", selection: Binding(
+                    get: { store.pageInterval },
+                    set: { store.setInterval($0) }
+                )) {
+                    ForEach([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], id: \.self) { interval in
+                        Text(String(format: "%.1f秒", interval)).tag(interval)
+                    }
+                }
             }
         }
         .formStyle(.grouped)
