@@ -20,7 +20,7 @@ final class CenterDisplayWindow {
     
     static func widthForPageSize(_ pageSize: Int) -> CGFloat {
         let charWidth = NSFont.systemFontSize(for: .regular)
-        return CGFloat(pageSize) * charWidth + 16.0
+        return CGFloat(pageSize) * charWidth + 8.0
     }
     
     func show(text: String) {
