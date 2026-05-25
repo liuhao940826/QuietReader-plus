@@ -61,7 +61,7 @@ final class CenterDisplayWindow {
         
         switch mode {
         case .overlay:
-            window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.statusWindow)) + 1)
+            window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.popUpMenuWindow)) + 1)
         case .below:
             window.level = .statusBar
         }
@@ -85,7 +85,7 @@ final class CenterDisplayWindow {
         
         switch overlapMode {
         case .overlay:
-            panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.statusWindow)) + 1)
+            panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.popUpMenuWindow)) + 1)
         case .below:
             panel.level = .statusBar
         }
@@ -174,7 +174,20 @@ struct CenterTextView: View {
             .foregroundColor(.primary)
             .lineLimit(1)
             .frame(width: width, height: 22)
+            .background(VisualEffectBackground())
     }
+}
+
+struct VisualEffectBackground: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .menu
+        view.blendingMode = .behindWindow
+        view.state = .active
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
 
 extension Font {
