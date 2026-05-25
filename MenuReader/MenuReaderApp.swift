@@ -52,9 +52,6 @@ struct MenuBarContent: View {
         Divider()
 
         DisplayModePicker(store: store)
-        if store.displayMode == .center {
-            OverlapModePicker(store: store)
-        }
         PageSizePicker(store: store)
         IntervalPicker(store: store)
 
@@ -122,17 +119,6 @@ struct IntervalPicker: View {
             ForEach(ReaderOptions.intervals, id: \.self) { interval in
                 Text(String(format: "%.1f秒", interval)).tag(interval)
             }
-        }
-    }
-}
-
-struct OverlapModePicker: View {
-    @ObservedObject var store: ReaderStore
-    
-    var body: some View {
-        Picker("居中层级", selection: $store.centerOverlapMode) {
-            Text("覆盖图标").tag(CenterOverlapMode.overlay)
-            Text("菜单栏下方").tag(CenterOverlapMode.below)
         }
     }
 }

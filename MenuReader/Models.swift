@@ -5,11 +5,6 @@ enum ReaderOptions {
     static let intervals: [TimeInterval] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 }
 
-enum CenterOverlapMode: String {
-    case overlay = "overlay"    // 文字覆盖在图标上层
-    case below = "below"        // 文字下移到菜单栏下方
-}
-
 struct Book: Identifiable, Codable, Equatable {
     let id: UUID
     let name: String

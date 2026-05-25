@@ -85,10 +85,6 @@ struct GeneralSettingsView: View {
             Section("显示") {
                 DisplayModePicker(store: store)
                     .pickerStyle(.radioGroup)
-                if store.displayMode == .center {
-                    OverlapModePicker(store: store)
-                        .pickerStyle(.radioGroup)
-                }
                 PageSizePicker(store: store)
                 IntervalPicker(store: store)
             }
