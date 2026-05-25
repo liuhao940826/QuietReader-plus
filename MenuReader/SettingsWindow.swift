@@ -121,52 +121,58 @@ struct LibrarySettingsView: View {
     @ObservedObject var store: ReaderStore
 
     var body: some View {
-        Form {
-            Section {
-                if store.books.isEmpty {
-                    Text("书库为空，请添加书籍")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(Array(store.books.enumerated()), id: \.element.id) { index, book in
-                        HStack(spacing: 8) {
-                            Image(systemName: index == store.currentBookIndex ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(index == store.currentBookIndex ? Color.accentColor : Color.secondary.opacity(0.5))
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(book.name)
-                                    .lineLimit(1)
-                                Text("第 \(book.currentPage + 1) / \(max(book.totalPages, 1)) 页")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Spacer()
-
-                            Button {
-                                store.removeBook(at: index)
-                            } label: {
-                                Image(systemName: "trash")
-                            }
-                            .buttonStyle(.borderless)
+        VStack(spacing: 0) {
+            Form {
+                Section {
+                    if store.books.isEmpty {
+                        Text("书库为空，请添加书籍")
                             .foregroundStyle(.secondary)
-                            .help("删除书籍")
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            guard index != store.currentBookIndex else { return }
-                            store.selectBook(at: index)
+                    } else {
+                        ForEach(Array(store.books.enumerated()), id: \.element.id) { index, book in
+                            HStack(spacing: 10) {
+                                Image(systemName: index == store.currentBookIndex ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(index == store.currentBookIndex ? Color.accentColor : Color.secondary.opacity(0.5))
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(book.name)
+                                        .lineLimit(1)
+                                    Text("第 \(book.currentPage + 1) / \(max(book.totalPages, 1)) 页")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                Button {
+                                    store.removeBook(at: index)
+                                } label: {
+                                    Image(systemName: "trash")
+                                }
+                                .buttonStyle(.borderless)
+                                .foregroundStyle(.secondary)
+                                .help("删除书籍")
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                guard index != store.currentBookIndex else { return }
+                                store.selectBook(at: index)
+                            }
                         }
                     }
                 }
+                .frame(maxHeight: 250)
             }
+            .formStyle(.grouped)
+            .padding()
             
-            Section {
+            HStack {
+                Spacer()
                 Button("添加书籍") {
                     store.addBooks()
                 }
             }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
         }
-        .formStyle(.grouped)
-        .padding()
     }
 }
