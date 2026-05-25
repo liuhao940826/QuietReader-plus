@@ -43,13 +43,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc private func statusItemClicked() {
-        guard let button = statusItem.button,
-              let window = button.window else { return }
+        guard let button = statusItem.button else { return }
         let menu = buildMenu()
-        let mouseInScreen = NSEvent.mouseLocation
-        let mouseInWindow = window.convertPoint(fromScreen: mouseInScreen)
-        let mouseInButton = button.convert(mouseInWindow, from: nil)
-        menu.popUp(positioning: nil, at: NSPoint(x: mouseInButton.x - 8, y: button.bounds.height), in: button)
+        
+        if store.displayMode == .center {
+            // Center mode: use native positioning (menu aligns to status item)
+            statusItem.menu = menu
+            button.performClick(nil)
+            statusItem.menu = nil
+        } else {
+            // Right mode: pop up at mouse position with independent width
+            guard let window = button.window else { return }
+            let mouseInScreen = NSEvent.mouseLocation
+            let mouseInWindow = window.convertPoint(fromScreen: mouseInScreen)
+            let mouseInButton = button.convert(mouseInWindow, from: nil)
+            menu.popUp(positioning: nil, at: NSPoint(x: mouseInButton.x - 8, y: button.bounds.height), in: button)
+        }
     }
 
     private func updateStatusItemLabel() {
