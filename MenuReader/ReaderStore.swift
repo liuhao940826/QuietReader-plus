@@ -28,6 +28,14 @@ final class ReaderStore: ObservableObject {
             reloadWithNewPageSize()
         }
     }
+    /// Empty set means "all screens". Otherwise contains display IDs of selected screens.
+    @Published var selectedScreenIDs: Set<String> = [] {
+        didSet {
+            let array = Array(selectedScreenIDs)
+            UserDefaults.standard.set(array, forKey: "selectedScreenIDs")
+            CenterDisplayWindow.shared.updateScreens(selectedScreenIDs)
+        }
+    }
 
     private var pages: [SlicedPage] = []
     private var timer: Timer?
@@ -36,6 +44,33 @@ final class ReaderStore: ObservableObject {
     private var persistTask: Task<Void, Never>?
 
     var hasPages: Bool { !pages.isEmpty }
+    
+    func isScreenSelected(_ screenID: String) -> Bool {
+        selectedScreenIDs.isEmpty || selectedScreenIDs.contains(screenID)
+    }
+    
+    func toggleScreen(_ screenID: String) {
+        if selectedScreenIDs.isEmpty {
+            // "All" → switch to only selecting everything except this one
+            let allIDs = Set(NSScreen.screens.compactMap { $0.displayUUID })
+            selectedScreenIDs = allIDs.subtracting([screenID])
+        } else if selectedScreenIDs.contains(screenID) {
+            selectedScreenIDs.remove(screenID)
+            // If nothing selected, revert to "all"
+            if selectedScreenIDs.isEmpty {
+                // Keep at least the deselected one off — actually this means user deselected all
+                // Revert to all screens
+                selectedScreenIDs = []
+            }
+        } else {
+            selectedScreenIDs.insert(screenID)
+            // If all screens are now selected, revert to empty (meaning "all")
+            let allIDs = Set(NSScreen.screens.compactMap { $0.displayUUID })
+            if selectedScreenIDs == allIDs {
+                selectedScreenIDs = []
+            }
+        }
+    }
     
     func flushPendingPersist() {
         persistTask?.cancel()
@@ -57,6 +92,10 @@ final class ReaderStore: ObservableObject {
         let savedPageSize = UserDefaults.standard.integer(forKey: "pageSize")
         if savedPageSize > 0 {
             pageSize = savedPageSize
+        }
+        
+        if let savedScreenIDs = UserDefaults.standard.stringArray(forKey: "selectedScreenIDs") {
+            selectedScreenIDs = Set(savedScreenIDs)
         }
         
         let library = ReaderStorage.loadLibrary()

@@ -105,6 +105,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Group 2: Settings submenus
         menu.addItem(buildDisplayModeSubmenu())
+        if store.displayMode == .center && NSScreen.screens.count > 1 {
+            menu.addItem(buildScreenSubmenu())
+        }
         menu.addItem(buildPageSizeSubmenu())
         menu.addItem(buildIntervalSubmenu())
         menu.addItem(buildBookSubmenu())
@@ -124,6 +127,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     // MARK: - Submenus
+    
+    private func buildScreenSubmenu() -> NSMenuItem {
+        let item = NSMenuItem(title: "显示屏幕", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        
+        for screen in NSScreen.screens {
+            guard let uuid = screen.displayUUID else { continue }
+            let screenItem = NSMenuItem(title: screen.displayName, action: #selector(toggleScreen(_:)), keyEquivalent: "")
+            screenItem.target = self
+            screenItem.representedObject = uuid
+            screenItem.state = store.isScreenSelected(uuid) ? .on : .off
+            submenu.addItem(screenItem)
+        }
+        
+        item.submenu = submenu
+        return item
+    }
     
     private func buildDisplayModeSubmenu() -> NSMenuItem {
         let item = NSMenuItem(title: "显示位置", action: nil, keyEquivalent: "")
@@ -205,6 +225,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func nextPage() { store.nextPage() }
     @objc private func setDisplayModeRight() { store.displayMode = .right }
     @objc private func setDisplayModeCenter() { store.displayMode = .center }
+    
+    @objc private func toggleScreen(_ sender: NSMenuItem) {
+        guard let uuid = sender.representedObject as? String else { return }
+        store.toggleScreen(uuid)
+    }
     
     @objc private func setPageSize(_ sender: NSMenuItem) {
         store.pageSize = sender.tag

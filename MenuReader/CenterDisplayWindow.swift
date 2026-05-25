@@ -5,17 +5,23 @@ import SwiftUI
 final class CenterDisplayWindow {
     static let shared = CenterDisplayWindow()
     
-    private var window: NSPanel?
-    private var textHostingView: NSHostingView<CenterTextView>?
+    private var windows: [String: NSPanel] = [:]
+    private var hostingViews: [String: NSHostingView<CenterTextView>] = [:]
     private var screenObserver: Any?
     private var activeSpaceObserver: Any?
     private var windowWidth: CGFloat = 200
+    private var selectedScreenIDs: Set<String> = []
+    private var currentText: String = ""
     
     private init() {
         let savedPageSize = UserDefaults.standard.integer(forKey: "pageSize")
         if savedPageSize > 0 {
             windowWidth = Self.widthForPageSize(savedPageSize)
         }
+        if let saved = UserDefaults.standard.stringArray(forKey: "selectedScreenIDs") {
+            selectedScreenIDs = Set(saved)
+        }
+        setupObservers()
     }
     
     static func widthForPageSize(_ pageSize: Int) -> CGFloat {
@@ -24,40 +30,64 @@ final class CenterDisplayWindow {
     }
     
     func show(text: String) {
-        if window == nil {
-            createWindow()
+        currentText = text
+        let screens = targetScreens()
+        
+        // Create windows for new screens
+        for screen in screens {
+            guard let uuid = screen.displayUUID else { continue }
+            if windows[uuid] == nil {
+                createWindow(for: screen, uuid: uuid)
+            }
+            hostingViews[uuid]?.rootView = CenterTextView(text: text, width: windowWidth)
+            windows[uuid]?.orderFrontRegardless()
         }
-        updateText(text)
-        window?.orderFrontRegardless()
-    }
-    
-    func updateText(_ text: String) {
-        guard let textHostingView else { return }
-        textHostingView.rootView = CenterTextView(text: text, width: windowWidth)
+        
+        // Remove windows for screens no longer selected
+        let activeUUIDs = Set(screens.compactMap { $0.displayUUID })
+        for uuid in windows.keys where !activeUUIDs.contains(uuid) {
+            windows[uuid]?.orderOut(nil)
+            windows[uuid]?.close()
+            windows.removeValue(forKey: uuid)
+            hostingViews.removeValue(forKey: uuid)
+        }
     }
     
     func hide() {
-        window?.orderOut(nil)
+        for panel in windows.values {
+            panel.orderOut(nil)
+        }
     }
     
     func updateWidth(forPageSize pageSize: Int) {
         windowWidth = Self.widthForPageSize(pageSize)
-        if window != nil {
-            positionWindow()
-            if let textHostingView {
-                textHostingView.rootView = CenterTextView(text: textHostingView.rootView.text, width: windowWidth)
-            }
+        repositionAll()
+        for (uuid, hostingView) in hostingViews {
+            hostingView.rootView = CenterTextView(text: currentText, width: windowWidth)
+            windows[uuid]?.setFrame(
+                NSRect(origin: windows[uuid]!.frame.origin, size: NSSize(width: windowWidth, height: 22)),
+                display: true
+            )
         }
     }
     
-    func destroy() {
-        removeObservers()
-        window?.close()
-        window = nil
-        textHostingView = nil
+    func updateScreens(_ screenIDs: Set<String>) {
+        selectedScreenIDs = screenIDs
+        if currentText.isEmpty { return }
+        show(text: currentText)
     }
     
-    private func createWindow() {
+    private func targetScreens() -> [NSScreen] {
+        if selectedScreenIDs.isEmpty {
+            return NSScreen.screens
+        }
+        return NSScreen.screens.filter { screen in
+            guard let uuid = screen.displayUUID else { return false }
+            return selectedScreenIDs.contains(uuid)
+        }
+    }
+    
+    private func createWindow(for screen: NSScreen, uuid: String) {
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: 22),
             styleMask: [.borderless, .nonactivatingPanel],
@@ -73,18 +103,16 @@ final class CenterDisplayWindow {
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = false
         
-        let hostingView = NSHostingView(rootView: CenterTextView(text: "", width: windowWidth))
+        let hostingView = NSHostingView(rootView: CenterTextView(text: currentText, width: windowWidth))
         panel.contentView = hostingView
-        self.textHostingView = hostingView
-        self.window = panel
         
-        positionWindow()
-        setupObservers()
+        windows[uuid] = panel
+        hostingViews[uuid] = hostingView
+        
+        positionWindow(panel, on: screen)
     }
     
-    private func positionWindow() {
-        guard let window, let screen = NSScreen.main else { return }
-        
+    private func positionWindow(_ window: NSPanel, on screen: NSScreen) {
         let screenFrame = screen.frame
         let safeAreaTop = screen.safeAreaInsets.top
         let windowHeight: CGFloat = 22
@@ -93,14 +121,19 @@ final class CenterDisplayWindow {
         let y: CGFloat
         
         if safeAreaTop > 0 {
-            // Notch screen: position below the notch
             y = screenFrame.origin.y + screenFrame.height - safeAreaTop
         } else {
-            // No notch: position at top edge (inside menu bar)
             y = screenFrame.origin.y + screenFrame.height - windowHeight
         }
         
         window.setFrame(NSRect(x: x, y: y, width: windowWidth, height: windowHeight), display: true)
+    }
+    
+    private func repositionAll() {
+        for screen in NSScreen.screens {
+            guard let uuid = screen.displayUUID, let panel = windows[uuid] else { continue }
+            positionWindow(panel, on: screen)
+        }
     }
     
     private func setupObservers() {
@@ -110,7 +143,8 @@ final class CenterDisplayWindow {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.positionWindow()
+                guard let self, !self.currentText.isEmpty else { return }
+                self.show(text: self.currentText)
             }
         }
         
@@ -120,19 +154,8 @@ final class CenterDisplayWindow {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.positionWindow()
+                self?.repositionAll()
             }
-        }
-    }
-    
-    private func removeObservers() {
-        if let observer = screenObserver {
-            NotificationCenter.default.removeObserver(observer)
-            screenObserver = nil
-        }
-        if let observer = activeSpaceObserver {
-            NSWorkspace.shared.notificationCenter.removeObserver(observer)
-            activeSpaceObserver = nil
         }
     }
 }
@@ -152,4 +175,17 @@ struct CenterTextView: View {
 
 extension Font {
     static let menuBarExtra: Font = .system(size: NSFont.systemFontSize(for: .regular), design: .monospaced)
+}
+
+extension NSScreen {
+    var displayUUID: String? {
+        guard let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else {
+            return nil
+        }
+        return "\(screenNumber)"
+    }
+    
+    var displayName: String {
+        localizedName
+    }
 }
