@@ -80,8 +80,8 @@ struct MenuBarContent: View {
 
         Divider()
 
-        Button("管理书库") {
-            openLibraryManager()
+        Button("设置") {
+            openSettings()
         }
 
         Button("退出") {
@@ -89,8 +89,8 @@ struct MenuBarContent: View {
         }
     }
 
-    private func openLibraryManager() {
+    private func openSettings() {
         NSApplication.shared.keyWindow?.close()
-        LibraryManagerWindow.shared.show(store: store)
+        SettingsWindow.shared.show(store: store)
     }
 }

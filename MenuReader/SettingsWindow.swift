@@ -1,0 +1,232 @@
+import AppKit
+import SwiftUI
+import ServiceManagement
+
+final class SettingsWindow {
+    static let shared = SettingsWindow()
+    
+    private var window: NSWindow?
+    private var store: ReaderStore?
+    
+    private init() {}
+    
+    func show(store: ReaderStore) {
+        self.store = store
+        
+        if let window = window {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        let settingsView = SettingsView(store: store)
+        let hostingController = NSHostingController(rootView: settingsView)
+        
+        let newWindow = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        
+        newWindow.title = "设置"
+        newWindow.contentViewController = hostingController
+        newWindow.center()
+        newWindow.isReleasedWhenClosed = false
+        
+        window = newWindow
+        newWindow.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+}
+
+struct SettingsView: View {
+    @ObservedObject var store: ReaderStore
+    @State private var selectedTab = 0
+    
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            GeneralSettingsView()
+                .tabItem {
+                    Label("通用", systemImage: "gear")
+                }
+                .tag(0)
+            
+            LibrarySettingsView(store: store)
+                .tabItem {
+                    Label("书库", systemImage: "books.vertical")
+                }
+                .tag(1)
+            
+            ShortcutsSettingsView()
+                .tabItem {
+                    Label("快捷键", systemImage: "keyboard")
+                }
+                .tag(2)
+        }
+        .frame(width: 600, height: 400)
+    }
+}
+
+struct GeneralSettingsView: View {
+    @AppStorage("launchAtLogin") private var launchAtLogin = false
+    
+    var body: some View {
+        Form {
+            Section {
+                Toggle("开机自启动", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { newValue in
+                        setLaunchAtLogin(enabled: newValue)
+                    }
+            }
+        }
+        .formStyle(.grouped)
+        .padding()
+    }
+    
+    private func setLaunchAtLogin(enabled: Bool) {
+        if #available(macOS 13.0, *) {
+            do {
+                if enabled {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                print("Failed to \(enabled ? "enable" : "disable") launch at login: \(error)")
+            }
+        }
+    }
+}
+
+struct ShortcutsSettingsView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("快捷键设置")
+                .font(.headline)
+            
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("隐藏/显示")
+                    Spacer()
+                    Text("⌥⌃O")
+                        .foregroundColor(.secondary)
+                }
+                
+                HStack {
+                    Text("暂停/继续")
+                    Spacer()
+                    Text("⌥⌃P")
+                        .foregroundColor(.secondary)
+                }
+                
+                HStack {
+                    Text("上一页")
+                    Spacer()
+                    Text("⌥⌃H")
+                        .foregroundColor(.secondary)
+                }
+                
+                HStack {
+                    Text("下一页")
+                    Spacer()
+                    Text("⌥⌃L")
+                        .foregroundColor(.secondary)
+                }
+                
+                HStack {
+                    Text("上一本书")
+                    Spacer()
+                    Text("⌥⌃K")
+                        .foregroundColor(.secondary)
+                }
+                
+                HStack {
+                    Text("下一本书")
+                    Spacer()
+                    Text("⌥⌃J")
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding()
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+struct LibrarySettingsView: View {
+    @ObservedObject var store: ReaderStore
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if store.books.isEmpty {
+                Text("书库为空，请添加书籍")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List {
+                    ForEach(Array(store.books.enumerated()), id: \.element.id) { index, book in
+                        HStack(spacing: 12) {
+                            Image(systemName: index == store.currentBookIndex ? "book.closed.fill" : "book.closed")
+                                .foregroundStyle(index == store.currentBookIndex ? .primary : .secondary)
+                                .frame(width: 16)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(book.name)
+                                    .lineLimit(1)
+
+                                Text("第 \(book.currentPage + 1) / \(max(book.totalPages, 1)) 页")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            if index == store.currentBookIndex {
+                                Label("当前", systemImage: "checkmark")
+                                    .labelStyle(.titleAndIcon)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.secondary.opacity(0.12), in: Capsule())
+                            }
+
+                            Button {
+                                store.removeBook(at: index)
+                            } label: {
+                                Image(systemName: "trash")
+                            }
+                            .buttonStyle(.borderless)
+                            .foregroundStyle(.secondary)
+                            .help("删除书籍")
+                        }
+                        .padding(.vertical, 4)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            guard index != store.currentBookIndex else { return }
+                            store.selectBook(at: index)
+                        }
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(index == store.currentBookIndex ? Color.accentColor.opacity(0.10) : Color.clear)
+                                .padding(.vertical, 2)
+                        )
+                    }
+                }
+                .listStyle(.inset)
+            }
+
+            HStack {
+                Button("添加书籍") {
+                    store.addBooks()
+                }
+
+                Spacer()
+            }
+        }
+        .padding(16)
+    }
+}
