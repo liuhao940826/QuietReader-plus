@@ -83,29 +83,10 @@ struct GeneralSettingsView: View {
             }
             
             Section("显示") {
-                Picker("显示位置", selection: $store.displayMode) {
-                    Text("右侧（状态栏）").tag(ReaderStore.DisplayMode.right)
-                    Text("居中（菜单栏中央）").tag(ReaderStore.DisplayMode.center)
-                }
-                .pickerStyle(.radioGroup)
-                
-                Picker("每页字数", selection: $store.pageSize) {
-                    Text("10字").tag(10)
-                    Text("20字").tag(20)
-                    Text("30字").tag(30)
-                    Text("40字").tag(40)
-                    Text("50字").tag(50)
-                    Text("60字").tag(60)
-                }
-                
-                Picker("翻页间隔", selection: Binding(
-                    get: { store.pageInterval },
-                    set: { store.setInterval($0) }
-                )) {
-                    ForEach([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], id: \.self) { interval in
-                        Text(String(format: "%.1f秒", interval)).tag(interval)
-                    }
-                }
+                DisplayModePicker(store: store)
+                    .pickerStyle(.radioGroup)
+                PageSizePicker(store: store)
+                IntervalPicker(store: store)
             }
         }
         .formStyle(.grouped)

@@ -29,8 +29,6 @@ struct MenuReaderApp: App {
 struct MenuBarContent: View {
     @ObservedObject var store: ReaderStore
 
-    private let intervalOptions: [TimeInterval] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
     var body: some View {
         Button(store.isHidden ? "显示" : "隐藏") {
             store.toggleVisibility()
@@ -53,37 +51,9 @@ struct MenuBarContent: View {
 
         Divider()
 
-        Picker("显示位置", selection: Binding(
-            get: { store.displayMode },
-            set: { store.displayMode = $0 }
-        )) {
-            Text("右侧").tag(ReaderStore.DisplayMode.right)
-            Text("居中").tag(ReaderStore.DisplayMode.center)
-        }
-        .pickerStyle(.menu)
-
-        Picker("每页字数", selection: Binding(
-            get: { store.pageSize },
-            set: { store.pageSize = $0 }
-        )) {
-            Text("10字").tag(10)
-            Text("20字").tag(20)
-            Text("30字").tag(30)
-            Text("40字").tag(40)
-            Text("50字").tag(50)
-            Text("60字").tag(60)
-        }
-        .pickerStyle(.menu)
-
-        Picker("翻页间隔", selection: Binding(
-            get: { store.pageInterval },
-            set: { store.setInterval($0) }
-        )) {
-            ForEach(intervalOptions, id: \.self) { interval in
-                Text(String(format: "%.1f秒", interval)).tag(interval)
-            }
-        }
-        .pickerStyle(.menu)
+        DisplayModePicker(store: store)
+        PageSizePicker(store: store)
+        IntervalPicker(store: store)
 
         Picker("书籍选择", selection: Binding(
             get: { store.currentBookIndex },
@@ -110,5 +80,45 @@ struct MenuBarContent: View {
     private func openSettings() {
         NSApplication.shared.keyWindow?.close()
         SettingsWindow.shared.show(store: store)
+    }
+}
+
+// MARK: - Shared Picker Components
+
+struct DisplayModePicker: View {
+    @ObservedObject var store: ReaderStore
+    
+    var body: some View {
+        Picker("显示位置", selection: $store.displayMode) {
+            Text("右侧").tag(ReaderStore.DisplayMode.right)
+            Text("居中").tag(ReaderStore.DisplayMode.center)
+        }
+    }
+}
+
+struct PageSizePicker: View {
+    @ObservedObject var store: ReaderStore
+    
+    var body: some View {
+        Picker("每页字数", selection: $store.pageSize) {
+            ForEach(ReaderOptions.pageSizes, id: \.self) { size in
+                Text("\(size)字").tag(size)
+            }
+        }
+    }
+}
+
+struct IntervalPicker: View {
+    @ObservedObject var store: ReaderStore
+    
+    var body: some View {
+        Picker("翻页间隔", selection: Binding(
+            get: { store.pageInterval },
+            set: { store.setInterval($0) }
+        )) {
+            ForEach(ReaderOptions.intervals, id: \.self) { interval in
+                Text(String(format: "%.1f秒", interval)).tag(interval)
+            }
+        }
     }
 }
