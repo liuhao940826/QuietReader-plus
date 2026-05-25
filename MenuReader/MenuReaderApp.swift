@@ -12,7 +12,7 @@ struct MenuReaderApp: App {
                     HotKeyManager.shared.setup(store: store)
                 }
         } label: {
-            if store.isHidden {
+            if store.isHidden || store.displayMode == .center {
                 Image(systemName: "book.fill")
                     .symbolRenderingMode(.monochrome)
             } else {

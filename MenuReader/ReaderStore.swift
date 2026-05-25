@@ -3,6 +3,11 @@ import Foundation
 
 @MainActor
 final class ReaderStore: ObservableObject {
+    enum DisplayMode: String {
+        case right = "right"
+        case center = "center"
+    }
+    
     @Published private(set) var currentText: String = "📖 无书籍"
     @Published private(set) var isPlaying: Bool = false
     @Published private(set) var currentPage: Int = 0
@@ -11,6 +16,12 @@ final class ReaderStore: ObservableObject {
     @Published private(set) var books: [Book] = []
     @Published private(set) var isHidden: Bool = false
     @Published private(set) var pageInterval: TimeInterval = 1.0
+    @Published var displayMode: DisplayMode = .right {
+        didSet {
+            UserDefaults.standard.set(displayMode.rawValue, forKey: "displayMode")
+            syncCenterWindow()
+        }
+    }
 
     private var pages: [String] = []
     private var timer: Timer?
@@ -24,6 +35,11 @@ final class ReaderStore: ObservableObject {
     }
 
     init() {
+        if let modeString = UserDefaults.standard.string(forKey: "displayMode"),
+           let mode = DisplayMode(rawValue: modeString) {
+            displayMode = mode
+        }
+        
         let library = ReaderStorage.loadLibrary()
         books = library.books
         currentBookIndex = library.currentBookIndex
@@ -153,10 +169,12 @@ final class ReaderStore: ObservableObject {
         if isHidden {
             wasPlayingBeforeHidden = isPlaying
             stopPlayback()
+            CenterDisplayWindow.shared.hide()
         } else {
             if wasPlayingBeforeHidden && hasPages {
                 startPlayback()
             }
+            syncCenterWindow()
         }
     }
 
@@ -187,9 +205,19 @@ final class ReaderStore: ObservableObject {
     private func updateDisplay() {
         guard pages.indices.contains(currentPage) else {
             currentText = books.isEmpty ? "📖 无书籍" : "📖"
+            syncCenterWindow()
             return
         }
         currentText = ReaderTextPipeline.menuBarLine(pages[currentPage])
+        syncCenterWindow()
+    }
+    
+    private func syncCenterWindow() {
+        if displayMode == .center && !isHidden {
+            CenterDisplayWindow.shared.show(text: currentText)
+        } else {
+            CenterDisplayWindow.shared.hide()
+        }
     }
 
     private func startPlayback() {

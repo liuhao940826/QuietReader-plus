@@ -47,7 +47,7 @@ struct SettingsView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            GeneralSettingsView()
+            GeneralSettingsView(store: store)
                 .tabItem {
                     Label("通用", systemImage: "gear")
                 }
@@ -70,6 +70,7 @@ struct SettingsView: View {
 }
 
 struct GeneralSettingsView: View {
+    @ObservedObject var store: ReaderStore
     @AppStorage("launchAtLogin") private var launchAtLogin = false
     
     var body: some View {
@@ -79,6 +80,14 @@ struct GeneralSettingsView: View {
                     .onChange(of: launchAtLogin) { newValue in
                         setLaunchAtLogin(enabled: newValue)
                     }
+            }
+            
+            Section("显示位置") {
+                Picker("文字显示位置", selection: $store.displayMode) {
+                    Text("右侧（状态栏）").tag(ReaderStore.DisplayMode.right)
+                    Text("居中（菜单栏中央）").tag(ReaderStore.DisplayMode.center)
+                }
+                .pickerStyle(.radioGroup)
             }
         }
         .formStyle(.grouped)
