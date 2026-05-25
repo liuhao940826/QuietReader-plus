@@ -128,10 +128,9 @@ struct LibrarySettingsView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(Array(store.books.enumerated()), id: \.element.id) { index, book in
-                        HStack(spacing: 12) {
-                            Image(systemName: index == store.currentBookIndex ? "book.closed.fill" : "book.closed")
-                                .foregroundStyle(index == store.currentBookIndex ? Color.accentColor : Color.secondary)
-                                .frame(width: 16)
+                        HStack(spacing: 8) {
+                            Image(systemName: index == store.currentBookIndex ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(index == store.currentBookIndex ? Color.accentColor : Color.secondary.opacity(0.5))
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(book.name)
@@ -142,12 +141,6 @@ struct LibrarySettingsView: View {
                             }
 
                             Spacer()
-
-                            if index == store.currentBookIndex {
-                                Text("当前")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
 
                             Button {
                                 store.removeBook(at: index)
