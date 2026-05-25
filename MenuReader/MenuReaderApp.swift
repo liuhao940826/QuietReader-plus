@@ -17,6 +17,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var store: ReaderStore!
     private var cancellables = Set<AnyCancellable>()
 
+    func applicationWillTerminate(_ notification: Notification) {
+        store.flushPendingPersist()
+    }
+    
     func applicationDidFinishLaunching(_ notification: Notification) {
         store = ReaderStore()
         

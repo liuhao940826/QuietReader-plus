@@ -36,6 +36,12 @@ final class ReaderStore: ObservableObject {
     private var persistTask: Task<Void, Never>?
 
     var hasPages: Bool { !pages.isEmpty }
+    
+    func flushPendingPersist() {
+        persistTask?.cancel()
+        persistTask = nil
+        ReaderStorage.saveLibrary(.init(books: books, currentBookIndex: currentBookIndex))
+    }
 
     var currentBookName: String {
         guard books.indices.contains(currentBookIndex) else { return "无书籍" }
@@ -287,7 +293,11 @@ final class ReaderStore: ObservableObject {
     private func refreshBookMetadata() {
         for index in books.indices {
             if let text = try? TextBookLoader.loadText(from: books[index].path) {
-                books[index].totalPages = PageSlicer.slice(content: text, pageSize: pageSize).count
+                let sliced = PageSlicer.slice(content: text, pageSize: pageSize)
+                books[index].totalPages = sliced.count
+                books[index].currentPage = PageSlicer.pageIndex(
+                    forCharacterOffset: books[index].characterOffset, in: sliced
+                )
             }
         }
     }
