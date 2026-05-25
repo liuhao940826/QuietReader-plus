@@ -121,9 +121,10 @@ final class ReaderStore: ObservableObject {
         
         // Show book name for 2 seconds
         currentText = "📖 \(books[currentBookIndex].name)"
+        syncCenterWindow()
         
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
             loadCurrentBook()
             if wasPlaying {
                 startPlayback()
