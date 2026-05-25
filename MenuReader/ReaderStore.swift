@@ -183,7 +183,7 @@ final class ReaderStore: ObservableObject {
             currentText = books.isEmpty ? "📖 无书籍" : "📖"
             return
         }
-        currentText = pages[currentPage]
+        currentText = ReaderTextPipeline.menuBarLine(pages[currentPage])
     }
 
     private func startPlayback() {

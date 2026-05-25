@@ -41,6 +41,33 @@ enum TextBookLoader {
     }
 }
 
+enum ReaderTextPipeline {
+    static func normalize(_ content: String) -> String {
+        let unifiedLines = content
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .replacingOccurrences(of: "\t", with: " ")
+
+        let paragraphs = unifiedLines
+            .components(separatedBy: CharacterSet.newlines)
+            .map { paragraph in
+                paragraph
+                    .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+                    .trimmingCharacters(in: .whitespaces)
+            }
+            .filter { !$0.isEmpty }
+
+        return paragraphs.joined(separator: "\n")
+    }
+
+    static func menuBarLine(_ content: String) -> String {
+        content
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
 enum PageSlicer {
     static let pageSize = 20
 
@@ -49,7 +76,7 @@ enum PageSlicer {
     ]
 
     static func slice(content: String) -> [String] {
-        let normalized = normalize(content)
+        let normalized = ReaderTextPipeline.normalize(content)
         let characters = Array(normalized)
 
         guard !characters.isEmpty else { return [] }
@@ -71,24 +98,6 @@ enum PageSlicer {
         }
 
         return pages
-    }
-
-    private static func normalize(_ content: String) -> String {
-        let unifiedLines = content
-            .replacingOccurrences(of: "\r\n", with: "\n")
-            .replacingOccurrences(of: "\r", with: "\n")
-            .replacingOccurrences(of: "\t", with: " ")
-
-        let paragraphs = unifiedLines
-            .components(separatedBy: CharacterSet.newlines)
-            .map { paragraph in
-                paragraph
-                    .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
-                    .trimmingCharacters(in: .whitespaces)
-            }
-            .filter { !$0.isEmpty }
-
-        return paragraphs.joined(separator: "\n")
     }
 
     private static func bestBreakIndex(in characters: [Character], start: Int, hardEnd: Int) -> Int {
