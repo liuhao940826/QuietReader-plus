@@ -129,13 +129,28 @@ enum PageSlicer {
             preferredBreakCharacters.contains(characters[index - 1])
         }
 
-        if let preferred {
-            return preferred
+        var end = preferred ?? hardEnd
+        
+        // Extend to include any no-start characters that would appear at next page start
+        while end < characters.count, noStartCharacters.contains(characters[end]) {
+            end += 1
         }
 
-        return hardEnd
+        return end
     }
 
+    private static let noStartCharacters: Set<Character> = [
+        // 句末/句中标点
+        "。", "！", "？", "；", "：", "，", "、",
+        ".", ",", "!", "?", ";", ":",
+        // 闭合括号/引号
+        "）", "」", "』", "》", "】", "〉",
+        ")", "]", "}",
+        "\u{201D}", "\u{2019}", // " '（闭合弯引号）
+        // 省略号
+        "…"
+    ]
+    
     private static func advanceCursor(after index: Int, in characters: [Character]) -> Int {
         var cursor = index
         while cursor < characters.count, characters[cursor].isWhitespace {
