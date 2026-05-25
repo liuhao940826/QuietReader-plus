@@ -35,15 +35,6 @@ struct MenuBarContent: View {
         Button(store.isHidden ? "显示" : "隐藏") {
             store.toggleVisibility()
         }
-        
-        Picker("显示位置", selection: Binding(
-            get: { store.displayMode },
-            set: { store.displayMode = $0 }
-        )) {
-            Text("右侧").tag(ReaderStore.DisplayMode.right)
-            Text("居中").tag(ReaderStore.DisplayMode.center)
-        }
-        .pickerStyle(.menu)
 
         Button(store.isPlaying ? "暂停" : "继续") {
             store.togglePlayback()
@@ -61,6 +52,15 @@ struct MenuBarContent: View {
         .disabled(!store.hasPages)
 
         Divider()
+
+        Picker("显示位置", selection: Binding(
+            get: { store.displayMode },
+            set: { store.displayMode = $0 }
+        )) {
+            Text("右侧").tag(ReaderStore.DisplayMode.right)
+            Text("居中").tag(ReaderStore.DisplayMode.center)
+        }
+        .pickerStyle(.menu)
 
         Picker("书籍选择", selection: Binding(
             get: { store.currentBookIndex },
