@@ -10,11 +10,16 @@ final class CenterDisplayWindow {
     private var screenObserver: Any?
     private var activeSpaceObserver: Any?
     private var windowWidth: CGFloat = 200
+    private var overlapMode: CenterOverlapMode = .overlay
     
     private init() {
         let savedPageSize = UserDefaults.standard.integer(forKey: "pageSize")
         if savedPageSize > 0 {
             windowWidth = Self.widthForPageSize(savedPageSize)
+        }
+        if let modeString = UserDefaults.standard.string(forKey: "centerOverlapMode"),
+           let mode = CenterOverlapMode(rawValue: modeString) {
+            overlapMode = mode
         }
     }
     
@@ -50,6 +55,19 @@ final class CenterDisplayWindow {
         }
     }
     
+    func updateOverlapMode(_ mode: CenterOverlapMode) {
+        overlapMode = mode
+        guard let window else { return }
+        
+        switch mode {
+        case .overlay:
+            window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.statusWindow)) + 1)
+        case .below:
+            window.level = .statusBar
+        }
+        positionWindow()
+    }
+    
     func destroy() {
         removeObservers()
         window?.close()
@@ -65,7 +83,12 @@ final class CenterDisplayWindow {
             defer: false
         )
         
-        panel.level = .statusBar
+        switch overlapMode {
+        case .overlay:
+            panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.statusWindow)) + 1)
+        case .below:
+            panel.level = .statusBar
+        }
         panel.backgroundColor = .clear
         panel.isOpaque = false
         panel.hasShadow = false
@@ -87,17 +110,21 @@ final class CenterDisplayWindow {
         
         let screenFrame = screen.frame
         let safeAreaTop = screen.safeAreaInsets.top
+        let menuBarHeight: CGFloat = safeAreaTop > 0 ? safeAreaTop : (screenFrame.height - screen.visibleFrame.height - screen.visibleFrame.origin.y + screenFrame.origin.y)
         let windowHeight: CGFloat = 22
         
         let x = screenFrame.origin.x + (screenFrame.width / 2) - (windowWidth / 2)
         let y: CGFloat
         
-        if safeAreaTop > 0 {
-            // Notch screen: position below the notch
-            y = screenFrame.origin.y + screenFrame.height - safeAreaTop
-        } else {
-            // No notch: position at top edge (inside menu bar)
-            y = screenFrame.origin.y + screenFrame.height - windowHeight
+        switch overlapMode {
+        case .overlay:
+            if safeAreaTop > 0 {
+                y = screenFrame.origin.y + screenFrame.height - safeAreaTop
+            } else {
+                y = screenFrame.origin.y + screenFrame.height - windowHeight
+            }
+        case .below:
+            y = screenFrame.origin.y + screenFrame.height - menuBarHeight - windowHeight
         }
         
         window.setFrame(NSRect(x: x, y: y, width: windowWidth, height: windowHeight), display: true)

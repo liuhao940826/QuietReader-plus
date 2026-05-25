@@ -28,6 +28,12 @@ final class ReaderStore: ObservableObject {
             reloadWithNewPageSize()
         }
     }
+    @Published var centerOverlapMode: CenterOverlapMode = .overlay {
+        didSet {
+            UserDefaults.standard.set(centerOverlapMode.rawValue, forKey: "centerOverlapMode")
+            CenterDisplayWindow.shared.updateOverlapMode(centerOverlapMode)
+        }
+    }
 
     private var pages: [SlicedPage] = []
     private var timer: Timer?
@@ -49,6 +55,11 @@ final class ReaderStore: ObservableObject {
         let savedPageSize = UserDefaults.standard.integer(forKey: "pageSize")
         if savedPageSize > 0 {
             pageSize = savedPageSize
+        }
+        
+        if let overlapString = UserDefaults.standard.string(forKey: "centerOverlapMode"),
+           let mode = CenterOverlapMode(rawValue: overlapString) {
+            centerOverlapMode = mode
         }
         
         let library = ReaderStorage.loadLibrary()
