@@ -122,6 +122,7 @@ struct ShortcutsSettingsView: View {
     var body: some View {
         Form {
             KeyboardShortcuts.Recorder("隐藏/显示:", name: .toggleVisibility)
+            KeyboardShortcuts.Recorder("切换显示位置:", name: .toggleDisplayMode)
             KeyboardShortcuts.Recorder("暂停/继续:", name: .togglePlayback)
             KeyboardShortcuts.Recorder("上一页:", name: .previousPage)
             KeyboardShortcuts.Recorder("下一页:", name: .nextPage)

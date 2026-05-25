@@ -11,7 +11,17 @@ final class CenterDisplayWindow {
     private var activeSpaceObserver: Any?
     private var windowWidth: CGFloat = 200
     
-    private init() {}
+    private init() {
+        let savedPageSize = UserDefaults.standard.integer(forKey: "pageSize")
+        if savedPageSize > 0 {
+            windowWidth = Self.widthForPageSize(savedPageSize)
+        }
+    }
+    
+    static func widthForPageSize(_ pageSize: Int) -> CGFloat {
+        // Monospaced 12pt: CJK characters are ~12pt wide each
+        return CGFloat(pageSize) * 12.0 + 16.0
+    }
     
     func show(text: String) {
         if window == nil {
@@ -31,11 +41,12 @@ final class CenterDisplayWindow {
     }
     
     func updateWidth(forPageSize pageSize: Int) {
-        // ~8pt per character for monospaced 12pt font
-        let newWidth = CGFloat(pageSize) * 8.0 + 20.0
-        windowWidth = newWidth
+        windowWidth = Self.widthForPageSize(pageSize)
         if window != nil {
             positionWindow()
+            if let textHostingView {
+                textHostingView.rootView = CenterTextView(text: textHostingView.rootView.text, width: windowWidth)
+            }
         }
     }
     

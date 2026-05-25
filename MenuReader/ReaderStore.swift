@@ -175,6 +175,10 @@ final class ReaderStore: ObservableObject {
         }
     }
 
+    func toggleDisplayMode() {
+        displayMode = (displayMode == .right) ? .center : .right
+    }
+    
     func toggleVisibility() {
         isHidden.toggle()
         

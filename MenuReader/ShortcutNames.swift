@@ -7,4 +7,5 @@ extension KeyboardShortcuts.Name {
     static let nextPage = Self("nextPage", default: .init(.l, modifiers: [.option, .control]))
     static let previousBook = Self("previousBook", default: .init(.k, modifiers: [.option, .control]))
     static let nextBook = Self("nextBook", default: .init(.j, modifiers: [.option, .control]))
+    static let toggleDisplayMode = Self("toggleDisplayMode", default: .init(.semicolon, modifiers: [.option, .control]))
 }

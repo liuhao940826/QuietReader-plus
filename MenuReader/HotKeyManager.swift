@@ -36,5 +36,9 @@ final class HotKeyManager {
         KeyboardShortcuts.onKeyUp(for: .nextBook) { [weak store] in
             store?.nextBook()
         }
+        
+        KeyboardShortcuts.onKeyUp(for: .toggleDisplayMode) { [weak store] in
+            store?.toggleDisplayMode()
+        }
     }
 }

@@ -35,6 +35,10 @@ struct MenuBarContent: View {
         Button(store.isHidden ? "显示" : "隐藏") {
             store.toggleVisibility()
         }
+        
+        Button(store.displayMode == .center ? "切换到右侧" : "切换到居中") {
+            store.toggleDisplayMode()
+        }
 
         Button(store.isPlaying ? "暂停" : "继续") {
             store.togglePlayback()
