@@ -9,6 +9,7 @@ final class CenterDisplayWindow {
     private var textHostingView: NSHostingView<CenterTextView>?
     private var screenObserver: Any?
     private var activeSpaceObserver: Any?
+    private var windowWidth: CGFloat = 200
     
     private init() {}
     
@@ -22,11 +23,20 @@ final class CenterDisplayWindow {
     
     func updateText(_ text: String) {
         guard let textHostingView else { return }
-        textHostingView.rootView = CenterTextView(text: text)
+        textHostingView.rootView = CenterTextView(text: text, width: windowWidth)
     }
     
     func hide() {
         window?.orderOut(nil)
+    }
+    
+    func updateWidth(forPageSize pageSize: Int) {
+        // ~8pt per character for monospaced 12pt font
+        let newWidth = CGFloat(pageSize) * 8.0 + 20.0
+        windowWidth = newWidth
+        if window != nil {
+            positionWindow()
+        }
     }
     
     func destroy() {
@@ -38,7 +48,7 @@ final class CenterDisplayWindow {
     
     private func createWindow() {
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 200, height: 22),
+            contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: 22),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -52,7 +62,7 @@ final class CenterDisplayWindow {
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = false
         
-        let hostingView = NSHostingView(rootView: CenterTextView(text: ""))
+        let hostingView = NSHostingView(rootView: CenterTextView(text: "", width: windowWidth))
         panel.contentView = hostingView
         self.textHostingView = hostingView
         self.window = panel
@@ -66,7 +76,6 @@ final class CenterDisplayWindow {
         
         let screenFrame = screen.frame
         let safeAreaTop = screen.safeAreaInsets.top
-        let windowWidth: CGFloat = 200
         let windowHeight: CGFloat = 22
         
         let x = screenFrame.origin.x + (screenFrame.width / 2) - (windowWidth / 2)
@@ -119,12 +128,13 @@ final class CenterDisplayWindow {
 
 struct CenterTextView: View {
     let text: String
+    let width: CGFloat
     
     var body: some View {
         Text(text)
             .font(.system(size: 12, design: .monospaced))
             .foregroundColor(.primary)
             .lineLimit(1)
-            .frame(width: 200, height: 22)
+            .frame(width: width, height: 22)
     }
 }

@@ -68,20 +68,26 @@ enum ReaderTextPipeline {
     }
 }
 
+struct SlicedPage {
+    let text: String
+    let startOffset: Int
+    let endOffset: Int
+}
+
 enum PageSlicer {
-    static let pageSize = 20
+    static let defaultPageSize = 20
 
     private static let preferredBreakCharacters: Set<Character> = [
         "。", "！", "？", "；", "：", "，", "、", ".", ",", "!", "?", ";", ":", " ", "\n"
     ]
 
-    static func slice(content: String) -> [String] {
+    static func slice(content: String, pageSize: Int = defaultPageSize) -> [SlicedPage] {
         let normalized = ReaderTextPipeline.normalize(content)
         let characters = Array(normalized)
 
         guard !characters.isEmpty else { return [] }
 
-        var pages: [String] = []
+        var pages: [SlicedPage] = []
         var cursor = 0
 
         while cursor < characters.count {
@@ -91,13 +97,28 @@ enum PageSlicer {
             let page = rawPage.trimmingCharacters(in: .whitespacesAndNewlines)
 
             if !page.isEmpty {
-                pages.append(page)
+                pages.append(SlicedPage(text: page, startOffset: cursor, endOffset: sliceEnd))
             }
 
             cursor = advanceCursor(after: sliceEnd, in: characters)
         }
 
         return pages
+    }
+    
+    static func pageIndex(forCharacterOffset offset: Int, in pages: [SlicedPage]) -> Int {
+        guard !pages.isEmpty else { return 0 }
+        
+        for (index, page) in pages.enumerated() {
+            if offset <= page.startOffset {
+                return index
+            }
+            if offset < page.endOffset {
+                return index
+            }
+        }
+        
+        return pages.count - 1
     }
 
     private static func bestBreakIndex(in characters: [Character], start: Int, hardEnd: Int) -> Int {

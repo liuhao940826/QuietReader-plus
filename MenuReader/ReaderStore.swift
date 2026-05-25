@@ -22,8 +22,14 @@ final class ReaderStore: ObservableObject {
             syncCenterWindow()
         }
     }
+    @Published var pageSize: Int = 20 {
+        didSet {
+            UserDefaults.standard.set(pageSize, forKey: "pageSize")
+            reloadWithNewPageSize()
+        }
+    }
 
-    private var pages: [String] = []
+    private var pages: [SlicedPage] = []
     private var timer: Timer?
     private var wasPlayingBeforeHidden: Bool = false
 
@@ -38,6 +44,11 @@ final class ReaderStore: ObservableObject {
         if let modeString = UserDefaults.standard.string(forKey: "displayMode"),
            let mode = DisplayMode(rawValue: modeString) {
             displayMode = mode
+        }
+        
+        let savedPageSize = UserDefaults.standard.integer(forKey: "pageSize")
+        if savedPageSize > 0 {
+            pageSize = savedPageSize
         }
         
         let library = ReaderStorage.loadLibrary()
@@ -89,6 +100,7 @@ final class ReaderStore: ObservableObject {
             totalPages = 0
             pages = []
             currentText = "📖 无书籍"
+            syncCenterWindow()
             persistLibrary()
             return
         }
@@ -189,10 +201,13 @@ final class ReaderStore: ObservableObject {
 
         do {
             let text = try TextBookLoader.loadText(from: books[currentBookIndex].path)
-            pages = PageSlicer.slice(content: text)
+            pages = PageSlicer.slice(content: text, pageSize: pageSize)
             totalPages = pages.count
             books[currentBookIndex].totalPages = totalPages
-            currentPage = min(max(books[currentBookIndex].currentPage, 0), max(totalPages - 1, 0))
+            
+            // Restore position from characterOffset
+            let offset = books[currentBookIndex].characterOffset
+            currentPage = PageSlicer.pageIndex(forCharacterOffset: offset, in: pages)
             updateDisplay()
         } catch {
             pages = []
@@ -208,7 +223,7 @@ final class ReaderStore: ObservableObject {
             syncCenterWindow()
             return
         }
-        currentText = ReaderTextPipeline.menuBarLine(pages[currentPage])
+        currentText = ReaderTextPipeline.menuBarLine(pages[currentPage].text)
         syncCenterWindow()
     }
     
@@ -244,13 +259,26 @@ final class ReaderStore: ObservableObject {
     private func saveCurrentProgress() {
         guard books.indices.contains(currentBookIndex) else { return }
         books[currentBookIndex].currentPage = currentPage
+        if pages.indices.contains(currentPage) {
+            books[currentBookIndex].characterOffset = pages[currentPage].startOffset
+        }
         persistLibrary()
     }
 
+    private func reloadWithNewPageSize() {
+        guard books.indices.contains(currentBookIndex) else { return }
+        // Save current offset before re-slicing
+        if pages.indices.contains(currentPage) {
+            books[currentBookIndex].characterOffset = pages[currentPage].startOffset
+        }
+        loadCurrentBook()
+        CenterDisplayWindow.shared.updateWidth(forPageSize: pageSize)
+    }
+    
     private func refreshBookMetadata() {
         for index in books.indices {
             if let text = try? TextBookLoader.loadText(from: books[index].path) {
-                books[index].totalPages = PageSlicer.slice(content: text).count
+                books[index].totalPages = PageSlicer.slice(content: text, pageSize: pageSize).count
             }
         }
     }

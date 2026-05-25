@@ -82,12 +82,21 @@ struct GeneralSettingsView: View {
                     }
             }
             
-            Section("显示位置") {
-                Picker("文字显示位置", selection: $store.displayMode) {
+            Section("显示") {
+                Picker("显示位置", selection: $store.displayMode) {
                     Text("右侧（状态栏）").tag(ReaderStore.DisplayMode.right)
                     Text("居中（菜单栏中央）").tag(ReaderStore.DisplayMode.center)
                 }
                 .pickerStyle(.radioGroup)
+                
+                Picker("每页字数", selection: $store.pageSize) {
+                    Text("10字").tag(10)
+                    Text("15字").tag(15)
+                    Text("20字").tag(20)
+                    Text("25字").tag(25)
+                    Text("30字").tag(30)
+                    Text("40字").tag(40)
+                }
             }
         }
         .formStyle(.grouped)

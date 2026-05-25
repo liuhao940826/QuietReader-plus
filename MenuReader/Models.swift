@@ -6,13 +6,15 @@ struct Book: Identifiable, Codable, Equatable {
     let path: String
     var currentPage: Int
     var totalPages: Int
-
-    init(id: UUID = UUID(), name: String, path: String, currentPage: Int = 0, totalPages: Int = 0) {
+    var characterOffset: Int
+    
+    init(id: UUID = UUID(), name: String, path: String, currentPage: Int = 0, totalPages: Int = 0, characterOffset: Int = 0) {
         self.id = id
         self.name = name
         self.path = path
         self.currentPage = currentPage
         self.totalPages = totalPages
+        self.characterOffset = characterOffset
     }
 }
 
