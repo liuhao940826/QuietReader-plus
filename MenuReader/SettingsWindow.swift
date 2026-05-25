@@ -20,8 +20,27 @@ final class SettingsWindow {
             return
         }
         
-        let settingsView = SettingsView(store: store)
-        let hostingController = NSHostingController(rootView: settingsView)
+        let tabVC = NSTabViewController()
+        tabVC.tabStyle = .toolbar
+        
+        let generalTab = NSHostingController(rootView: GeneralSettingsView(store: store))
+        generalTab.title = "通用"
+        let generalItem = NSTabViewItem(viewController: generalTab)
+        generalItem.image = NSImage(systemSymbolName: "gear", accessibilityDescription: "通用")
+        
+        let libraryTab = NSHostingController(rootView: LibrarySettingsView(store: store))
+        libraryTab.title = "书库"
+        let libraryItem = NSTabViewItem(viewController: libraryTab)
+        libraryItem.image = NSImage(systemSymbolName: "books.vertical", accessibilityDescription: "书库")
+        
+        let shortcutsTab = NSHostingController(rootView: ShortcutsSettingsView())
+        shortcutsTab.title = "快捷键"
+        let shortcutsItem = NSTabViewItem(viewController: shortcutsTab)
+        shortcutsItem.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: "快捷键")
+        
+        tabVC.addTabViewItem(generalItem)
+        tabVC.addTabViewItem(libraryItem)
+        tabVC.addTabViewItem(shortcutsItem)
         
         let newWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
@@ -31,9 +50,10 @@ final class SettingsWindow {
         )
         
         newWindow.title = "设置"
-        newWindow.contentViewController = hostingController
+        newWindow.contentViewController = tabVC
         newWindow.center()
         newWindow.isReleasedWhenClosed = false
+        newWindow.toolbarStyle = .preference
         
         window = newWindow
         newWindow.makeKeyAndOrderFront(nil)
@@ -41,33 +61,6 @@ final class SettingsWindow {
     }
 }
 
-struct SettingsView: View {
-    @ObservedObject var store: ReaderStore
-    @State private var selectedTab = 0
-    
-    var body: some View {
-        TabView(selection: $selectedTab) {
-            GeneralSettingsView(store: store)
-                .tabItem {
-                    Label("通用", systemImage: "gear")
-                }
-                .tag(0)
-            
-            LibrarySettingsView(store: store)
-                .tabItem {
-                    Label("书库", systemImage: "books.vertical")
-                }
-                .tag(1)
-            
-            ShortcutsSettingsView()
-                .tabItem {
-                    Label("快捷键", systemImage: "keyboard")
-                }
-                .tag(2)
-        }
-        .frame(width: 600, height: 400)
-    }
-}
 
 struct GeneralSettingsView: View {
     @ObservedObject var store: ReaderStore
@@ -128,23 +121,21 @@ struct LibrarySettingsView: View {
     @ObservedObject var store: ReaderStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            if store.books.isEmpty {
-                Text("书库为空，请添加书籍")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List {
+        Form {
+            Section {
+                if store.books.isEmpty {
+                    Text("书库为空，请添加书籍")
+                        .foregroundStyle(.secondary)
+                } else {
                     ForEach(Array(store.books.enumerated()), id: \.element.id) { index, book in
                         HStack(spacing: 12) {
                             Image(systemName: index == store.currentBookIndex ? "book.closed.fill" : "book.closed")
-                                .foregroundStyle(index == store.currentBookIndex ? .primary : .secondary)
+                                .foregroundStyle(index == store.currentBookIndex ? Color.accentColor : Color.secondary)
                                 .frame(width: 16)
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(book.name)
                                     .lineLimit(1)
-
                                 Text("第 \(book.currentPage + 1) / \(max(book.totalPages, 1)) 页")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -153,13 +144,9 @@ struct LibrarySettingsView: View {
                             Spacer()
 
                             if index == store.currentBookIndex {
-                                Label("当前", systemImage: "checkmark")
-                                    .labelStyle(.titleAndIcon)
+                                Text("当前")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.secondary.opacity(0.12), in: Capsule())
                             }
 
                             Button {
@@ -171,30 +158,22 @@ struct LibrarySettingsView: View {
                             .foregroundStyle(.secondary)
                             .help("删除书籍")
                         }
-                        .padding(.vertical, 4)
                         .contentShape(Rectangle())
                         .onTapGesture {
                             guard index != store.currentBookIndex else { return }
                             store.selectBook(at: index)
                         }
-                        .listRowBackground(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(index == store.currentBookIndex ? Color.accentColor.opacity(0.10) : Color.clear)
-                                .padding(.vertical, 2)
-                        )
                     }
                 }
-                .listStyle(.inset)
             }
-
-            HStack {
+            
+            Section {
                 Button("添加书籍") {
                     store.addBooks()
                 }
-
-                Spacer()
             }
         }
-        .padding(16)
+        .formStyle(.grouped)
+        .padding()
     }
 }
