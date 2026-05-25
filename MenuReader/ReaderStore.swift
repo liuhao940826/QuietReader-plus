@@ -14,6 +14,7 @@ final class ReaderStore: ObservableObject {
 
     private var pages: [String] = []
     private var timer: Timer?
+    private var wasPlayingBeforeHidden: Bool = false
 
     var hasPages: Bool { !pages.isEmpty }
 
@@ -150,7 +151,12 @@ final class ReaderStore: ObservableObject {
         isHidden.toggle()
         
         if isHidden {
+            wasPlayingBeforeHidden = isPlaying
             stopPlayback()
+        } else {
+            if wasPlayingBeforeHidden && hasPages {
+                startPlayback()
+            }
         }
     }
 
