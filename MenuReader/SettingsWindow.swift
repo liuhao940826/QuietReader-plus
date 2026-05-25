@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import ServiceManagement
+import KeyboardShortcuts
 
 final class SettingsWindow {
     static let shared = SettingsWindow()
@@ -101,57 +102,15 @@ struct GeneralSettingsView: View {
 
 struct ShortcutsSettingsView: View {
     var body: some View {
-        VStack(spacing: 20) {
-            Text("快捷键设置")
-                .font(.headline)
-            
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("隐藏/显示")
-                    Spacer()
-                    Text("⌥⌃O")
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text("暂停/继续")
-                    Spacer()
-                    Text("⌥⌃P")
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text("上一页")
-                    Spacer()
-                    Text("⌥⌃H")
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text("下一页")
-                    Spacer()
-                    Text("⌥⌃L")
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text("上一本书")
-                    Spacer()
-                    Text("⌥⌃K")
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text("下一本书")
-                    Spacer()
-                    Text("⌥⌃J")
-                        .foregroundColor(.secondary)
-                }
-            }
-            .padding()
-            
-            Spacer()
+        Form {
+            KeyboardShortcuts.Recorder("隐藏/显示:", name: .toggleVisibility)
+            KeyboardShortcuts.Recorder("暂停/继续:", name: .togglePlayback)
+            KeyboardShortcuts.Recorder("上一页:", name: .previousPage)
+            KeyboardShortcuts.Recorder("下一页:", name: .nextPage)
+            KeyboardShortcuts.Recorder("上一本书:", name: .previousBook)
+            KeyboardShortcuts.Recorder("下一本书:", name: .nextBook)
         }
+        .formStyle(.grouped)
         .padding()
     }
 }

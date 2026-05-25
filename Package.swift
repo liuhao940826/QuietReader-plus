@@ -7,12 +7,12 @@ let package = Package(
         .macOS(.v13)
     ],
     dependencies: [
-        .package(url: "https://github.com/soffes/HotKey", from: "0.2.0")
+        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", from: "2.0.0")
     ],
     targets: [
         .executableTarget(
             name: "MenuReader",
-            dependencies: ["HotKey"],
+            dependencies: ["KeyboardShortcuts"],
             path: "MenuReader",
             exclude: [
                 "Info.plist",
