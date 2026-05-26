@@ -17,8 +17,12 @@ enum ReaderStorage {
     }
 
     static func saveLibrary(_ library: ReaderLibrary) {
-        guard let data = try? JSONEncoder().encode(library) else { return }
-        UserDefaults.standard.set(data, forKey: libraryKey)
+        do {
+            let data = try JSONEncoder().encode(library)
+            UserDefaults.standard.set(data, forKey: libraryKey)
+        } catch {
+            print("[MenuReader] Failed to save library: \(error.localizedDescription)")
+        }
     }
 }
 
