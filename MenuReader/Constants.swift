@@ -2,11 +2,11 @@ import Foundation
 
 enum UserDefaultsKey {
     static let library = "reader.library"
-    static let displayMode = "displayMode"
-    static let pageSize = "pageSize"
-    static let pageInterval = "pageInterval"
-    static let selectedScreenIDs = "selectedScreenIDs"
-    static let launchAtLogin = "launchAtLogin"
+    static let displayMode = "reader.displayMode"
+    static let pageSize = "reader.pageSize"
+    static let pageInterval = "reader.pageInterval"
+    static let selectedScreenIDs = "reader.selectedScreenIDs"
+    static let launchAtLogin = "reader.launchAtLogin"
 }
 
 enum ReaderConstants {

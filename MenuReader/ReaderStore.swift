@@ -99,7 +99,10 @@ final class ReaderStore: ObservableObject {
         }
         
         if let savedScreenIDs = UserDefaults.standard.stringArray(forKey: UserDefaultsKey.selectedScreenIDs) {
-            selectedScreenIDs = Set(savedScreenIDs)
+            // Clean up invalid screen IDs that no longer exist
+            let currentScreenIDs = Set(NSScreen.screens.compactMap { $0.displayUUID })
+            let validIDs = Set(savedScreenIDs).intersection(currentScreenIDs)
+            selectedScreenIDs = validIDs
         }
         
         let savedInterval = UserDefaults.standard.double(forKey: UserDefaultsKey.pageInterval)
