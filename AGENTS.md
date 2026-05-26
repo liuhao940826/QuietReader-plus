@@ -2,28 +2,15 @@
 
 ## 项目概述
 
-macOS 菜单栏小说阅读器，Swift/SwiftUI + AppKit 实现，使用 Swift Package Manager 构建。
-
-## 关键文件
-
-- `MenuReader/MenuReaderApp.swift` - 应用入口，NSStatusItem 菜单栏 UI
-- `MenuReader/ReaderStore.swift` - 核心状态管理，播放控制，书库管理
-- `MenuReader/CenterDisplayWindow.swift` - 居中显示模式（NSPanel 浮窗）
-- `MenuReader/SettingsWindow.swift` - 设置界面（NSTabViewController + SwiftUI）
-- `MenuReader/Services.swift` - 存储、文本加载、分页算法
-- `MenuReader/HotKeyManager.swift` - 全局快捷键（KeyboardShortcuts 库）
-- `MenuReader/ShortcutNames.swift` - 快捷键名称定义
-- `MenuReader/Models.swift` - 数据模型（Book, ReaderLibrary）
-- `MenuReader/Constants.swift` - 常量和 UserDefaults Key
-- `Package.swift` - SPM 依赖配置（依赖 KeyboardShortcuts 库）
+macOS 菜单栏小说阅读器，Swift/SwiftUI + AppKit，Swift Package Manager 构建。单 executable target，所有源码在 `MenuReader/` 目录。
 
 ## 构建命令
 
 ```bash
-# 开发构建
+# 开发构建（类型检查）
 swift build
 
-# Release 构建（创建 .app bundle）
+# Release 构建（创建 .app bundle，仅 arm64）
 ./build.sh
 
 # 启动应用
@@ -33,37 +20,37 @@ nohup build/MenuReader.app/Contents/MacOS/MenuReader > /tmp/menureader.log 2>&1 
 pkill -9 MenuReader
 ```
 
-注意：需要 Xcode（非 CommandLineTools），因为 KeyboardShortcuts 库使用了 Swift Macros。
+**必须使用完整 Xcode**（非 CommandLineTools）— KeyboardShortcuts 库依赖 Swift Macros，CommandLineTools 编译会失败。
 
-## 技术要点
+## 关键文件
 
-- **平台要求**: macOS 13.0+
-- **菜单栏**: NSStatusItem + NSMenu（非 SwiftUI MenuBarExtra，解决宽度耦合问题）
-- **快捷键**: sindresorhus/KeyboardShortcuts 库（自定义全局快捷键）
-- **居中显示**: NSPanel (borderless, nonactivatingPanel, ignoresMouseEvents)
-- **多显示器**: 每个选中屏幕独立 NSPanel 窗口
-- **分页**: PageSlicer 支持中文标点断句、禁首标点处理
-- **进度存储**: 基于 characterOffset（字符偏移量），pageSize 变更后位置不丢失
-- **编码支持**: UTF-8 优先，回退 GB18030
+| 文件 | 职责 |
+|------|------|
+| `MenuReaderApp.swift` | 应用入口，NSStatusItem + NSMenu 菜单栏 UI |
+| `ReaderStore.swift` | 核心状态（@MainActor），播放/翻页/书库，所有 UI 联动的中枢 |
+| `CenterDisplayWindow.swift` | 居中浮窗（NSPanel），多显示器每屏独立窗口 |
+| `SettingsWindow.swift` | NSTabViewController + SwiftUI 混合设置界面 |
+| `Services.swift` | ReaderStorage / TextBookLoader / PageSlicer 分页算法 |
+| `HotKeyManager.swift` | 全局快捷键注册（sindresorhus/KeyboardShortcuts） |
+| `Models.swift` | Book, ReaderLibrary 数据模型（Codable） |
+| `Constants.swift` | UserDefaults key 和数值常量 |
 
-## 默认快捷键
+## 架构要点
 
-- `⌥⌃O` - 显示/隐藏
-- `⌥⌃P` - 播放/暂停
-- `⌥⌃H` - 上一页
-- `⌥⌃L` - 下一页
-- `⌥⌃K` - 上一本书
-- `⌥⌃J` - 下一本书
-- `⌥⌃;` - 切换显示位置（右侧/居中）
+- **菜单栏用 NSStatusItem + NSMenu**，不是 SwiftUI MenuBarExtra（因宽度需固定控制）
+- **居中模式**: NSPanel (borderless, nonactivatingPanel, ignoresMouseEvents)，刘海屏自动偏移 safeAreaInsets.top
+- **分页 (PageSlicer)**: 基于 characterOffset 存储进度，pageSize 变更不丢失位置；支持中文标点断句、禁首标点
+- **编码**: UTF-8 优先，回退 GB18030
+- **持久化**: persistLibrary() 有 2 秒防抖（`persistDebounceDelay`），退出时 `flushPendingPersist()` 强制写入
 
-## 开发注意事项
+## 开发陷阱
 
-- 右侧模式 status item 宽度固定（基于 pageSize 计算），防止菜单跳动
-- 居中模式窗口位置：刘海屏自动下移（safeAreaInsets.top）
-- persistLibrary() 有 2 秒防抖，退出时 flushPendingPersist() 强制保存
-- didSet 中有 isInitialized guard，防止 init 期间触发副作用
-- 设置窗口使用 NSTabViewController (tabStyle: .toolbar) 实现原生图标+文字 tab
+- **必须用 .app bundle 启动**：裸二进制 `.build/debug/MenuReader` 不会加载 Info.plist，导致 LSUIElement 等配置失效（设置窗口弹不出来等）。debug 也用 `./build.sh` 后从 bundle 启动
+- `ReaderStore` 属性的 `didSet` 中有 `isInitialized` guard，init 期间不触发副作用 — 新增 @Published 属性必须遵守同样模式
+- 右侧模式 status item 宽度基于 pageSize 固定计算，改动 pageSize 逻辑需同步更新宽度
+- `selectedScreenIDs` 空集表示"全部屏幕"，非空才是选中子集 — 注意边界语义
+- 设置窗口是 NSTabViewController (tabStyle: .toolbar)，不是纯 SwiftUI
 
 ## 测试数据
 
-测试小说文件在 `/Users/zhao/Tmp/` 目录下。
+测试小说文件在 `/Users/zhao/Tmp/` 目录下。无自动化测试。
