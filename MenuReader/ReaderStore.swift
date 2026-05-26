@@ -18,12 +18,14 @@ final class ReaderStore: ObservableObject {
     @Published private(set) var pageInterval: TimeInterval = 1.0
     @Published var displayMode: DisplayMode = .right {
         didSet {
+            guard isInitialized else { return }
             UserDefaults.standard.set(displayMode.rawValue, forKey: UserDefaultsKey.displayMode)
             syncCenterWindow()
         }
     }
     @Published var pageSize: Int = 20 {
         didSet {
+            guard isInitialized else { return }
             UserDefaults.standard.set(pageSize, forKey: UserDefaultsKey.pageSize)
             reloadWithNewPageSize()
         }
@@ -31,6 +33,7 @@ final class ReaderStore: ObservableObject {
     /// Empty set means "all screens". Otherwise contains display IDs of selected screens.
     @Published var selectedScreenIDs: Set<String> = [] {
         didSet {
+            guard isInitialized else { return }
             let array = Array(selectedScreenIDs)
             UserDefaults.standard.set(array, forKey: UserDefaultsKey.selectedScreenIDs)
             CenterDisplayWindow.shared.updateScreens(selectedScreenIDs)
@@ -42,6 +45,7 @@ final class ReaderStore: ObservableObject {
     private var wasPlayingBeforeHidden: Bool = false
     private var bookSwitchTask: Task<Void, Never>?
     private var persistTask: Task<Void, Never>?
+    private var isInitialized = false
 
     var hasPages: Bool { !pages.isEmpty }
     
@@ -98,6 +102,11 @@ final class ReaderStore: ObservableObject {
             selectedScreenIDs = Set(savedScreenIDs)
         }
         
+        let savedInterval = UserDefaults.standard.double(forKey: UserDefaultsKey.pageInterval)
+        if savedInterval > 0 {
+            pageInterval = savedInterval
+        }
+        
         let library = ReaderStorage.loadLibrary()
         books = library.books
         currentBookIndex = library.currentBookIndex
@@ -105,6 +114,7 @@ final class ReaderStore: ObservableObject {
         if books.indices.contains(currentBookIndex) {
             loadCurrentBook()
         }
+        isInitialized = true
     }
 
     func addBooks() {
@@ -130,7 +140,7 @@ final class ReaderStore: ObservableObject {
             currentBookIndex = 0
             loadCurrentBook()
         } else {
-            refreshBookMetadata()
+            refreshBookMetadata(for: newBooks)
         }
 
         persistLibrary(immediate: true)
@@ -220,6 +230,7 @@ final class ReaderStore: ObservableObject {
 
     func setInterval(_ interval: TimeInterval) {
         pageInterval = interval
+        UserDefaults.standard.set(interval, forKey: UserDefaultsKey.pageInterval)
         if isPlaying {
             restartPlaybackTimer()
         }
@@ -329,8 +340,9 @@ final class ReaderStore: ObservableObject {
         CenterDisplayWindow.shared.updateWidth(forPageSize: pageSize)
     }
     
-    private func refreshBookMetadata() {
-        for index in books.indices {
+    private func refreshBookMetadata(for newBooks: [Book]) {
+        for book in newBooks {
+            guard let index = books.firstIndex(where: { $0.id == book.id }) else { continue }
             if let text = try? TextBookLoader.loadText(from: books[index].path) {
                 let sliced = PageSlicer.slice(content: text, pageSize: pageSize)
                 books[index].totalPages = sliced.count

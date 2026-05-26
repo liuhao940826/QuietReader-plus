@@ -34,12 +34,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         
         HotKeyManager.shared.setup(store: store)
         
-        // Observe any store change to update label
-        store.objectWillChange
+        // Observe specific published properties (fires after change)
+        store.$currentText
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.updateStatusItemLabel()
-            }
+            .sink { [weak self] _ in self?.updateStatusItemLabel() }
+            .store(in: &cancellables)
+        
+        store.$isHidden
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.updateStatusItemLabel() }
+            .store(in: &cancellables)
+        
+        store.$displayMode
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.updateStatusItemLabel() }
             .store(in: &cancellables)
 
         updateStatusItemLabel()
@@ -58,7 +66,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let mouseInScreen = NSEvent.mouseLocation
             let mouseInWindow = window.convertPoint(fromScreen: mouseInScreen)
             let mouseInButton = button.convert(mouseInWindow, from: nil)
-            menu.popUp(positioning: nil, at: NSPoint(x: mouseInButton.x - 8, y: button.bounds.height), in: button)
+            menu.popUp(positioning: nil, at: NSPoint(x: mouseInButton.x - 8, y: button.bounds.height), in: button) // -8 compensates for menu left padding
         }
     }
 

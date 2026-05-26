@@ -4,6 +4,7 @@ enum UserDefaultsKey {
     static let library = "reader.library"
     static let displayMode = "displayMode"
     static let pageSize = "pageSize"
+    static let pageInterval = "pageInterval"
     static let selectedScreenIDs = "selectedScreenIDs"
     static let launchAtLogin = "launchAtLogin"
 }

@@ -29,7 +29,12 @@ enum ReaderStorage {
 
 enum TextBookLoader {
     static func loadText(from path: String) throws -> String {
-        try String(contentsOf: URL(fileURLWithPath: path), encoding: .utf8)
+        let url = URL(fileURLWithPath: path)
+        if let text = try? String(contentsOf: url, encoding: .utf8) { return text }
+        let gb18030 = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(
+            CFStringEncoding(CFStringEncodings.GB_18030_2000.rawValue)))
+        if let text = try? String(contentsOf: url, encoding: gb18030) { return text }
+        return try String(contentsOf: url, encoding: .utf8)
     }
 }
 
