@@ -176,3 +176,42 @@ struct LibrarySettingsView: View {
         }
     }
 }
+
+// MARK: - Shared Picker Components
+
+struct DisplayModePicker: View {
+    @ObservedObject var store: ReaderStore
+    
+    var body: some View {
+        Picker("显示位置", selection: $store.displayMode) {
+            Text("右侧").tag(ReaderStore.DisplayMode.right)
+            Text("居中").tag(ReaderStore.DisplayMode.center)
+        }
+    }
+}
+
+struct PageSizePicker: View {
+    @ObservedObject var store: ReaderStore
+    
+    var body: some View {
+        Picker("每页字数", selection: $store.pageSize) {
+            ForEach(ReaderOptions.pageSizes, id: \.self) { size in
+                Text("\(size)字").tag(size)
+            }}
+    }
+}
+
+struct IntervalPicker: View {
+    @ObservedObject var store: ReaderStore
+    
+    var body: some View {
+        Picker("翻页间隔", selection: Binding(
+            get: { store.pageInterval },
+            set: { store.setInterval($0) }
+        )) {
+            ForEach(ReaderOptions.intervals, id: \.self) { interval in
+                Text(String(format: "%.1f秒", interval)).tag(interval)
+            }
+        }
+    }
+}
