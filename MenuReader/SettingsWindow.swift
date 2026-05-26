@@ -64,7 +64,7 @@ final class SettingsWindow {
 
 struct GeneralSettingsView: View {
     @ObservedObject var store: ReaderStore
-    @AppStorage("launchAtLogin") private var launchAtLogin = false
+    @AppStorage(UserDefaultsKey.launchAtLogin) private var launchAtLogin = false
     
     var body: some View {
         Form {

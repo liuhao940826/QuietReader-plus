@@ -14,11 +14,11 @@ final class CenterDisplayWindow {
     private var currentText: String = ""
     
     private init() {
-        let savedPageSize = UserDefaults.standard.integer(forKey: "pageSize")
+        let savedPageSize = UserDefaults.standard.integer(forKey: UserDefaultsKey.pageSize)
         if savedPageSize > 0 {
             windowWidth = Self.widthForPageSize(savedPageSize)
         }
-        if let saved = UserDefaults.standard.stringArray(forKey: "selectedScreenIDs") {
+        if let saved = UserDefaults.standard.stringArray(forKey: UserDefaultsKey.selectedScreenIDs) {
             selectedScreenIDs = Set(saved)
         }
         setupObservers()
@@ -26,7 +26,7 @@ final class CenterDisplayWindow {
     
     static func widthForPageSize(_ pageSize: Int) -> CGFloat {
         let charWidth = NSFont.systemFontSize(for: .regular)
-        return CGFloat(pageSize) * charWidth + 8.0
+        return CGFloat(pageSize) * charWidth + ReaderConstants.windowPadding
     }
     
     func show(text: String) {
@@ -64,8 +64,9 @@ final class CenterDisplayWindow {
         repositionAll()
         for (uuid, hostingView) in hostingViews {
             hostingView.rootView = CenterTextView(text: currentText, width: windowWidth)
-            windows[uuid]?.setFrame(
-                NSRect(origin: windows[uuid]!.frame.origin, size: NSSize(width: windowWidth, height: 22)),
+            guard let window = windows[uuid] else { continue }
+            window.setFrame(
+                NSRect(origin: window.frame.origin, size: NSSize(width: windowWidth, height: ReaderConstants.menuBarHeight)),
                 display: true
             )
         }
@@ -89,7 +90,7 @@ final class CenterDisplayWindow {
     
     private func createWindow(for screen: NSScreen, uuid: String) {
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: 22),
+            contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: ReaderConstants.menuBarHeight),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -115,7 +116,7 @@ final class CenterDisplayWindow {
     private func positionWindow(_ window: NSPanel, on screen: NSScreen) {
         let screenFrame = screen.frame
         let safeAreaTop = screen.safeAreaInsets.top
-        let windowHeight: CGFloat = 22
+        let windowHeight = ReaderConstants.menuBarHeight
         
         let x = screenFrame.origin.x + (screenFrame.width / 2) - (windowWidth / 2)
         let y: CGFloat
@@ -169,7 +170,7 @@ struct CenterTextView: View {
             .font(.menuBarExtra)
             .foregroundColor(.primary)
             .lineLimit(1)
-            .frame(width: width, height: 22)
+            .frame(width: width, height: ReaderConstants.menuBarHeight)
     }
 }
 

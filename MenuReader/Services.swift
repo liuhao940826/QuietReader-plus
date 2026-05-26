@@ -1,7 +1,7 @@
 import Foundation
 
 enum ReaderStorage {
-    private static let libraryKey = "reader.library"
+    private static let libraryKey = UserDefaultsKey.library
 
     static func loadLibrary() -> ReaderLibrary {
         guard
@@ -63,7 +63,7 @@ struct SlicedPage {
 }
 
 enum PageSlicer {
-    static let defaultPageSize = 20
+    static let defaultPageSize = ReaderConstants.defaultPageSize
 
     private static let preferredBreakCharacters: Set<Character> = [
         "。", "！", "？", "；", "：", "，", "、", ".", ",", "!", "?", ";", ":", " ", "\n"
@@ -112,7 +112,7 @@ enum PageSlicer {
     private static func bestBreakIndex(in characters: [Character], start: Int, hardEnd: Int) -> Int {
         guard hardEnd < characters.count else { return hardEnd }
 
-        let searchStart = max(start + 1, hardEnd - 6)
+        let searchStart = max(start + 1, hardEnd - ReaderConstants.breakSearchRange)
         let preferred = stride(from: hardEnd, through: searchStart, by: -1).first { index in
             preferredBreakCharacters.contains(characters[index - 1])
         }

@@ -18,13 +18,13 @@ final class ReaderStore: ObservableObject {
     @Published private(set) var pageInterval: TimeInterval = 1.0
     @Published var displayMode: DisplayMode = .right {
         didSet {
-            UserDefaults.standard.set(displayMode.rawValue, forKey: "displayMode")
+            UserDefaults.standard.set(displayMode.rawValue, forKey: UserDefaultsKey.displayMode)
             syncCenterWindow()
         }
     }
     @Published var pageSize: Int = 20 {
         didSet {
-            UserDefaults.standard.set(pageSize, forKey: "pageSize")
+            UserDefaults.standard.set(pageSize, forKey: UserDefaultsKey.pageSize)
             reloadWithNewPageSize()
         }
     }
@@ -32,7 +32,7 @@ final class ReaderStore: ObservableObject {
     @Published var selectedScreenIDs: Set<String> = [] {
         didSet {
             let array = Array(selectedScreenIDs)
-            UserDefaults.standard.set(array, forKey: "selectedScreenIDs")
+            UserDefaults.standard.set(array, forKey: UserDefaultsKey.selectedScreenIDs)
             CenterDisplayWindow.shared.updateScreens(selectedScreenIDs)
         }
     }
@@ -84,17 +84,17 @@ final class ReaderStore: ObservableObject {
     }
 
     init() {
-        if let modeString = UserDefaults.standard.string(forKey: "displayMode"),
+        if let modeString = UserDefaults.standard.string(forKey: UserDefaultsKey.displayMode),
            let mode = DisplayMode(rawValue: modeString) {
             displayMode = mode
         }
         
-        let savedPageSize = UserDefaults.standard.integer(forKey: "pageSize")
+        let savedPageSize = UserDefaults.standard.integer(forKey: UserDefaultsKey.pageSize)
         if savedPageSize > 0 {
             pageSize = savedPageSize
         }
         
-        if let savedScreenIDs = UserDefaults.standard.stringArray(forKey: "selectedScreenIDs") {
+        if let savedScreenIDs = UserDefaults.standard.stringArray(forKey: UserDefaultsKey.selectedScreenIDs) {
             selectedScreenIDs = Set(savedScreenIDs)
         }
         
@@ -172,7 +172,7 @@ final class ReaderStore: ObservableObject {
         
         bookSwitchTask?.cancel()
         bookSwitchTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            try? await Task.sleep(nanoseconds: ReaderConstants.bookSwitchDelay)
             guard !Task.isCancelled else { return }
             loadCurrentBook()
             if wasPlaying {
@@ -350,7 +350,7 @@ final class ReaderStore: ObservableObject {
         }
         guard persistTask == nil else { return }
         persistTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            try? await Task.sleep(nanoseconds: ReaderConstants.persistDebounceDelay)
             guard !Task.isCancelled else { return }
             self.persistTask = nil
             ReaderStorage.saveLibrary(.init(books: self.books, currentBookIndex: self.currentBookIndex))
