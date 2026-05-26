@@ -14,13 +14,8 @@ final class CenterDisplayWindow {
     private var currentText: String = ""
     
     private init() {
-        let savedPageSize = UserDefaults.standard.integer(forKey: UserDefaultsKey.pageSize)
-        if savedPageSize > 0 {
-            windowWidth = Self.widthForPageSize(savedPageSize)
-        }
-        if let saved = UserDefaults.standard.stringArray(forKey: UserDefaultsKey.selectedScreenIDs) {
-            selectedScreenIDs = Set(saved)
-        }
+        windowWidth = Self.widthForPageSize(UserDefaults.standard.integer(forKey: UserDefaultsKey.pageSize))
+        selectedScreenIDs = Set(UserDefaults.standard.stringArray(forKey: UserDefaultsKey.selectedScreenIDs) ?? [])
         setupObservers()
     }
     

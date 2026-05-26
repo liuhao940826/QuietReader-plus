@@ -88,27 +88,14 @@ final class ReaderStore: ObservableObject {
     }
 
     init() {
-        if let modeString = UserDefaults.standard.string(forKey: UserDefaultsKey.displayMode),
-           let mode = DisplayMode(rawValue: modeString) {
-            displayMode = mode
-        }
+        let modeString = UserDefaults.standard.string(forKey: UserDefaultsKey.displayMode) ?? DisplayMode.right.rawValue
+        displayMode = DisplayMode(rawValue: modeString) ?? .right
+        pageSize = UserDefaults.standard.integer(forKey: UserDefaultsKey.pageSize)
+        pageInterval = UserDefaults.standard.double(forKey: UserDefaultsKey.pageInterval)
         
-        let savedPageSize = UserDefaults.standard.integer(forKey: UserDefaultsKey.pageSize)
-        if savedPageSize > 0 {
-            pageSize = savedPageSize
-        }
-        
-        if let savedScreenIDs = UserDefaults.standard.stringArray(forKey: UserDefaultsKey.selectedScreenIDs) {
-            // Clean up invalid screen IDs that no longer exist
-            let currentScreenIDs = Set(NSScreen.screens.compactMap { $0.displayUUID })
-            let validIDs = Set(savedScreenIDs).intersection(currentScreenIDs)
-            selectedScreenIDs = validIDs
-        }
-        
-        let savedInterval = UserDefaults.standard.double(forKey: UserDefaultsKey.pageInterval)
-        if savedInterval > 0 {
-            pageInterval = savedInterval
-        }
+        let savedScreenIDs = UserDefaults.standard.stringArray(forKey: UserDefaultsKey.selectedScreenIDs) ?? []
+        let currentScreenIDs = Set(NSScreen.screens.compactMap { $0.displayUUID })
+        selectedScreenIDs = Set(savedScreenIDs).intersection(currentScreenIDs)
         
         let library = ReaderStorage.loadLibrary()
         books = library.books

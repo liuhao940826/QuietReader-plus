@@ -22,6 +22,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        UserDefaults.standard.register(defaults: [
+            UserDefaultsKey.pageSize: ReaderConstants.defaultPageSize,
+            UserDefaultsKey.pageInterval: 1.0,
+            UserDefaultsKey.displayMode: ReaderStore.DisplayMode.right.rawValue,
+            UserDefaultsKey.selectedScreenIDs: [String](),
+            UserDefaultsKey.launchAtLogin: false,
+        ])
+        
         store = ReaderStore()
         
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
