@@ -12,6 +12,7 @@ final class CenterDisplayWindow {
     private var windowWidth: CGFloat = 200
     private var selectedScreenIDs: Set<String> = []
     private var currentText: String = ""
+    private var menuBarAppearance: NSAppearance?
     
     private init() {
         windowWidth = Self.widthForPageSize(UserDefaults.standard.integer(forKey: UserDefaultsKey.pageSize))
@@ -73,6 +74,13 @@ final class CenterDisplayWindow {
         show(text: currentText)
     }
     
+    func updateMenuBarAppearance(_ appearance: NSAppearance?) {
+        menuBarAppearance = appearance
+        for panel in windows.values {
+            panel.appearance = appearance
+        }
+    }
+    
     private func targetScreens() -> [NSScreen] {
         if selectedScreenIDs.isEmpty {
             return NSScreen.screens
@@ -98,6 +106,7 @@ final class CenterDisplayWindow {
         panel.ignoresMouseEvents = true
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = false
+        panel.appearance = menuBarAppearance
         
         let hostingView = NSHostingView(rootView: CenterTextView(text: currentText, width: windowWidth))
         panel.contentView = hostingView

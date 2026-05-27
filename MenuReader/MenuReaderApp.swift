@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var store: ReaderStore!
     private var cancellables = Set<AnyCancellable>()
+    private var appearanceObservation: NSKeyValueObservation?
 
     func applicationWillTerminate(_ notification: Notification) {
         store.flushPendingPersist()
@@ -58,11 +59,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .store(in: &cancellables)
 
         updateStatusItemLabel()
+        
+        // KVO on button's effectiveAppearance — fires immediately when available and on every change
+        if let button = statusItem.button {
+            appearanceObservation = button.observe(\.effectiveAppearance, options: [.initial, .new]) { button, _ in
+                Task { @MainActor in
+                    CenterDisplayWindow.shared.updateMenuBarAppearance(button.effectiveAppearance)
+                }
+            }
+        }
     }
     
     @objc private func statusItemClicked() {
         guard let button = statusItem.button else { return }
         let menu = buildMenu()
+        
+        // Ensure menu follows system theme, not menu bar's wallpaper-adapted appearance
+        menu.appearance = NSApp.effectiveAppearance
         
         if store.displayMode == .center {
             statusItem.menu = menu
