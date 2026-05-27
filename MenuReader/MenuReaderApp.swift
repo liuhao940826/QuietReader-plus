@@ -42,19 +42,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         
         HotKeyManager.shared.setup(store: store)
         
-        // Observe specific published properties (fires after change)
         store.$currentText
-            .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.updateStatusItemLabel() }
             .store(in: &cancellables)
         
         store.$isHidden
-            .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.updateStatusItemLabel() }
             .store(in: &cancellables)
         
         store.$displayMode
-            .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.updateStatusItemLabel() }
             .store(in: &cancellables)
 

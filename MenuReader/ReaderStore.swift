@@ -91,7 +91,7 @@ final class ReaderStore: ObservableObject {
         let modeString = UserDefaults.standard.string(forKey: UserDefaultsKey.displayMode) ?? DisplayMode.right.rawValue
         displayMode = DisplayMode(rawValue: modeString) ?? .right
         pageSize = UserDefaults.standard.integer(forKey: UserDefaultsKey.pageSize)
-        pageInterval = UserDefaults.standard.double(forKey: UserDefaultsKey.pageInterval)
+        pageInterval = max(UserDefaults.standard.double(forKey: UserDefaultsKey.pageInterval), 0.1)
         
         let savedScreenIDs = UserDefaults.standard.stringArray(forKey: UserDefaultsKey.selectedScreenIDs) ?? []
         let currentScreenIDs = Set(NSScreen.screens.compactMap { $0.displayUUID })
@@ -305,7 +305,7 @@ final class ReaderStore: ObservableObject {
     private func restartPlaybackTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: pageInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
                 self?.nextPage()
             }
         }
@@ -344,13 +344,12 @@ final class ReaderStore: ObservableObject {
     }
 
     private func persistLibrary(immediate: Bool = false) {
+        persistTask?.cancel()
         if immediate {
-            persistTask?.cancel()
             persistTask = nil
             ReaderStorage.saveLibrary(.init(books: books, currentBookIndex: currentBookIndex))
             return
         }
-        guard persistTask == nil else { return }
         persistTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: ReaderConstants.persistDebounceDelay)
             guard !Task.isCancelled else { return }

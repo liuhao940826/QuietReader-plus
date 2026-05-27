@@ -5,10 +5,13 @@ final class HotKeyManager {
     static let shared = HotKeyManager()
     
     private weak var store: ReaderStore?
+    private var isSetUp = false
 
     private init() {}
 
     func setup(store: ReaderStore) {
+        guard !isSetUp else { return }
+        isSetUp = true
         self.store = store
         
         // Register all shortcuts using onKeyUp

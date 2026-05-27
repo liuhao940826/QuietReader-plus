@@ -3,6 +3,7 @@ import SwiftUI
 import ServiceManagement
 import KeyboardShortcuts
 
+@MainActor
 final class SettingsWindow {
     static let shared = SettingsWindow()
     
@@ -16,7 +17,11 @@ final class SettingsWindow {
         
         if let window = window {
             window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            if #available(macOS 14.0, *) {
+                NSApp.activate()
+            } else {
+                NSApp.activate(ignoringOtherApps: true)
+            }
             return
         }
         
@@ -57,7 +62,11 @@ final class SettingsWindow {
         
         window = newWindow
         newWindow.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        if #available(macOS 14.0, *) {
+            NSApp.activate()
+        } else {
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 }
 

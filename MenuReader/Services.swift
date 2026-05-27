@@ -79,6 +79,7 @@ enum PageSlicer {
     ]
 
     static func slice(content: String, pageSize: Int = defaultPageSize) -> [SlicedPage] {
+        let effectivePageSize = max(pageSize, 1)
         let normalized = ReaderTextPipeline.normalize(content)
         let characters = Array(normalized)
 
@@ -88,7 +89,7 @@ enum PageSlicer {
         var cursor = 0
 
         while cursor < characters.count {
-            let hardEnd = min(cursor + pageSize, characters.count)
+            let hardEnd = min(cursor + effectivePageSize, characters.count)
             let sliceEnd = bestBreakIndex(in: characters, start: cursor, hardEnd: hardEnd)
             let rawPage = String(characters[cursor..<sliceEnd])
             let page = rawPage.trimmingCharacters(in: .whitespacesAndNewlines)
