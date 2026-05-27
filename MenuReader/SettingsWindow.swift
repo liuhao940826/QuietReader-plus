@@ -4,68 +4,71 @@ import ServiceManagement
 import KeyboardShortcuts
 
 @MainActor
-final class SettingsWindow {
+final class SettingsWindow: NSObject, NSWindowDelegate {
     static let shared = SettingsWindow()
     
     private var window: NSWindow?
     private var store: ReaderStore?
     
-    private init() {}
+    private override init() {}
     
     func show(store: ReaderStore) {
         self.store = store
         
-        if let window = window {
-            window.makeKeyAndOrderFront(nil)
-            if #available(macOS 14.0, *) {
-                NSApp.activate()
-            } else {
-                NSApp.activate(ignoringOtherApps: true)
-            }
-            return
+        if window == nil {
+            let tabVC = NSTabViewController()
+            tabVC.tabStyle = .toolbar
+            
+            let generalTab = NSHostingController(rootView: GeneralSettingsView(store: store))
+            generalTab.title = "通用"
+            let generalItem = NSTabViewItem(viewController: generalTab)
+            generalItem.image = NSImage(systemSymbolName: "gear", accessibilityDescription: "通用")
+            
+            let libraryTab = NSHostingController(rootView: LibrarySettingsView(store: store))
+            libraryTab.title = "书库"
+            let libraryItem = NSTabViewItem(viewController: libraryTab)
+            libraryItem.image = NSImage(systemSymbolName: "books.vertical", accessibilityDescription: "书库")
+            
+            let shortcutsTab = NSHostingController(rootView: ShortcutsSettingsView())
+            shortcutsTab.title = "快捷键"
+            let shortcutsItem = NSTabViewItem(viewController: shortcutsTab)
+            shortcutsItem.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: "快捷键")
+            
+            tabVC.addTabViewItem(generalItem)
+            tabVC.addTabViewItem(libraryItem)
+            tabVC.addTabViewItem(shortcutsItem)
+            
+            let newWindow = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
+                styleMask: [.titled, .closable],
+                backing: .buffered,
+                defer: false
+            )
+            
+            newWindow.title = "设置"
+            newWindow.contentViewController = tabVC
+            newWindow.center()
+            newWindow.isReleasedWhenClosed = false
+            newWindow.toolbarStyle = .preference
+            newWindow.delegate = self
+            
+            window = newWindow
         }
         
-        let tabVC = NSTabViewController()
-        tabVC.tabStyle = .toolbar
-        
-        let generalTab = NSHostingController(rootView: GeneralSettingsView(store: store))
-        generalTab.title = "通用"
-        let generalItem = NSTabViewItem(viewController: generalTab)
-        generalItem.image = NSImage(systemSymbolName: "gear", accessibilityDescription: "通用")
-        
-        let libraryTab = NSHostingController(rootView: LibrarySettingsView(store: store))
-        libraryTab.title = "书库"
-        let libraryItem = NSTabViewItem(viewController: libraryTab)
-        libraryItem.image = NSImage(systemSymbolName: "books.vertical", accessibilityDescription: "书库")
-        
-        let shortcutsTab = NSHostingController(rootView: ShortcutsSettingsView())
-        shortcutsTab.title = "快捷键"
-        let shortcutsItem = NSTabViewItem(viewController: shortcutsTab)
-        shortcutsItem.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: "快捷键")
-        
-        tabVC.addTabViewItem(generalItem)
-        tabVC.addTabViewItem(libraryItem)
-        tabVC.addTabViewItem(shortcutsItem)
-        
-        let newWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false
-        )
-        
-        newWindow.title = "设置"
-        newWindow.contentViewController = tabVC
-        newWindow.center()
-        newWindow.isReleasedWhenClosed = false
-        newWindow.toolbarStyle = .preference
-        
-        window = newWindow
-        newWindow.makeKeyAndOrderFront(nil)
+        // LSUIElement apps need .accessory policy to reliably show windows
+        NSApp.setActivationPolicy(.accessory)
+        window?.makeKeyAndOrderFront(nil)
         if #available(macOS 14.0, *) {
             NSApp.activate()
         } else {
             NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+    
+    nonisolated func windowWillClose(_ notification: Notification) {
+        Task { @MainActor in
+            // Restore LSUIElement behavior: hide from Cmd+Tab
+            NSApp.setActivationPolicy(.prohibited)
         }
     }
 }
