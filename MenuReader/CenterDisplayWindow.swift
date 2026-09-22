@@ -175,9 +175,8 @@ final class CenterDisplayWindow {
         let screenFrame = screen.frame
         let windowHeight = Self.panelHeight
 
-        // Keep the reader clear of Finder windows and the desktop edge for screenshots.
         let x = screenFrame.origin.x + (screenFrame.width / 2) - (windowWidth / 2)
-        let y = screenFrame.maxY - windowHeight - 300
+        let y = screenFrame.origin.y + (screenFrame.height / 2) - (windowHeight / 2)
         
         window.setFrame(NSRect(x: x, y: y, width: windowWidth, height: windowHeight), display: true)
     }
