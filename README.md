@@ -32,6 +32,12 @@ QuietReader 是一个 macOS 菜单栏小说阅读器，支持 TXT 导入、悬�
 
 ![外接屏显示](docs/screenshots/external-display.png)
 
+### 播放与逐字高亮
+
+点击播放后，文字会按照当前播放速度逐字变为高亮颜色；调整倍速时，染色进度也会同步变慢或加快，当前页完成后自动进入下一页。
+
+![播放时逐字高亮](docs/screenshots/word-highlight-playback.png)
+
 ### 书库与阅读进度
 
 “书库”页面会显示已导入的 TXT 文件、当前阅读页数和总页数。应用会保存当前书籍与阅读进度，下次启动可以继续上次的位置。
