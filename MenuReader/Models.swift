@@ -27,3 +27,9 @@ struct ReaderLibrary: Codable {
     var books: [Book]
     var currentBookIndex: Int
 }
+
+struct BookChapter: Identifiable {
+    let id = UUID()
+    let title: String
+    let characterOffset: Int
+}

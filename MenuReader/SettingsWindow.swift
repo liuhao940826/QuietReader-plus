@@ -33,10 +33,16 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             shortcutsTab.title = "快捷键"
             let shortcutsItem = NSTabViewItem(viewController: shortcutsTab)
             shortcutsItem.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: "快捷键")
+
+            let outlineTab = NSHostingController(rootView: OutlineSettingsView(store: store))
+            outlineTab.title = "目录"
+            let outlineItem = NSTabViewItem(viewController: outlineTab)
+            outlineItem.image = NSImage(systemSymbolName: "list.bullet", accessibilityDescription: "目录")
             
             tabVC.addTabViewItem(generalItem)
             tabVC.addTabViewItem(libraryItem)
             tabVC.addTabViewItem(shortcutsItem)
+            tabVC.addTabViewItem(outlineItem)
             
             let newWindow = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 600, height: 400),
@@ -73,6 +79,31 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
     }
 }
 
+
+struct OutlineSettingsView: View {
+    @ObservedObject var store: ReaderStore
+
+    var body: some View {
+        Group {
+            if store.chapters.isEmpty {
+                Text("没有识别到章节标题")
+                    .foregroundStyle(.secondary)
+                    .padding()
+            } else {
+                List(store.chapters) { chapter in
+                    Button {
+                        store.jumpToChapter(chapter)
+                    } label: {
+                        Text(chapter.title)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+    }
+}
 
 struct GeneralSettingsView: View {
     @ObservedObject var store: ReaderStore

@@ -14,6 +14,7 @@ final class ReaderStore: ObservableObject {
     private var totalPages: Int = 0
     @Published private(set) var currentBookIndex: Int = 0
     @Published private(set) var books: [Book] = []
+    @Published private(set) var chapters: [BookChapter] = []
     @Published private(set) var isHidden: Bool = false
     @Published private(set) var pageInterval: TimeInterval = 1.0
     @Published var displayMode: DisplayMode = .right {
@@ -48,6 +49,21 @@ final class ReaderStore: ObservableObject {
     private var isInitialized = false
 
     var hasPages: Bool { !pages.isEmpty }
+    var currentPageIndex: Int { currentPage }
+    var pageCount: Int { pages.count }
+
+    func pagePreview(at index: Int) -> String {
+        guard pages.indices.contains(index) else { return "" }
+        return pages[index].text
+    }
+
+    func jumpToPage(_ index: Int, startPlayback shouldStartPlayback: Bool = false) {
+        guard pages.indices.contains(index) else { return }
+        currentPage = index
+        updateDisplay()
+        saveCurrentProgress()
+        if shouldStartPlayback && !isPlaying { startPlayback() }
+    }
     
     func isScreenSelected(_ screenID: String) -> Bool {
         selectedScreenIDs.isEmpty || selectedScreenIDs.contains(screenID)
@@ -92,6 +108,7 @@ final class ReaderStore: ObservableObject {
         displayMode = DisplayMode(rawValue: modeString) ?? .right
         pageSize = UserDefaults.standard.integer(forKey: UserDefaultsKey.pageSize)
         pageInterval = max(UserDefaults.standard.double(forKey: UserDefaultsKey.pageInterval), 0.1)
+        CenterDisplayWindow.shared.setDisplayedSpeed(1.0 / pageInterval)
         
         let savedScreenIDs = UserDefaults.standard.stringArray(forKey: UserDefaultsKey.selectedScreenIDs) ?? []
         let currentScreenIDs = Set(NSScreen.screens.compactMap { $0.displayUUID })
@@ -213,6 +230,13 @@ final class ReaderStore: ObservableObject {
         saveCurrentProgress()
     }
 
+    func jumpToChapter(_ chapter: BookChapter) {
+        guard !pages.isEmpty else { return }
+        currentPage = PageSlicer.pageIndex(forCharacterOffset: chapter.characterOffset, in: pages)
+        updateDisplay()
+        saveCurrentProgress()
+    }
+
     func togglePlayback() {
         guard !isHidden else { return }
         isPlaying ? stopPlayback() : startPlayback()
@@ -224,6 +248,22 @@ final class ReaderStore: ObservableObject {
         if isPlaying {
             restartPlaybackTimer()
         }
+    }
+
+    func slowerPlayback() {
+        setPlaybackSpeed(max(playbackSpeed / 2, 0.001))
+    }
+
+    func fasterPlayback() {
+        setPlaybackSpeed(min(playbackSpeed * 2, 16))
+    }
+
+    private var playbackSpeed: Double { 1.0 / pageInterval }
+
+    func setPlaybackSpeed(_ speed: Double) {
+        let clampedSpeed = min(max(speed, 0.001), 16)
+        setInterval(1.0 / clampedSpeed)
+        CenterDisplayWindow.shared.setDisplayedSpeed(clampedSpeed)
     }
 
     func toggleDisplayMode() {
@@ -245,6 +285,11 @@ final class ReaderStore: ObservableObject {
         }
     }
 
+    func showCurrentReadingWindow() {
+        isHidden = false
+        syncCenterWindow()
+    }
+
     private func loadCurrentBook() {
         guard books.indices.contains(currentBookIndex) else {
             currentText = "📖 无书籍"
@@ -256,6 +301,7 @@ final class ReaderStore: ObservableObject {
 
         do {
             let text = try TextBookLoader.loadText(from: books[currentBookIndex].path)
+            chapters = Self.findChapters(in: text)
             pages = PageSlicer.slice(content: text, pageSize: pageSize)
             totalPages = pages.count
             books[currentBookIndex].totalPages = totalPages
@@ -270,6 +316,20 @@ final class ReaderStore: ObservableObject {
             currentPage = 0
             currentText = "❌ 读取失败"
         }
+    }
+
+    private static func findChapters(in text: String) -> [BookChapter] {
+        var result: [BookChapter] = []
+        var offset = 0
+        for line in text.split(whereSeparator: \.isNewline) {
+            let title = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            let isChapter = title.range(of: "^(序章|楔子|番外|引子|后记|尾声|第.{1,12}(章|节|回|卷))", options: .regularExpression) != nil
+            if isChapter && title.count <= 40 {
+                result.append(BookChapter(title: title, characterOffset: offset))
+            }
+            offset += line.count + 1
+        }
+        return result
     }
 
     private func updateDisplay() {
@@ -294,12 +354,14 @@ final class ReaderStore: ObservableObject {
         guard hasPages else { return }
         restartPlaybackTimer()
         isPlaying = true
+        CenterDisplayWindow.shared.setPlaybackState(true)
     }
 
     private func stopPlayback() {
         timer?.invalidate()
         timer = nil
         isPlaying = false
+        CenterDisplayWindow.shared.setPlaybackState(false)
     }
 
     private func restartPlaybackTimer() {

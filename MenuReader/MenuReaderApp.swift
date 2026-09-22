@@ -32,6 +32,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ])
         
         store = ReaderStore()
+        CenterDisplayWindow.shared.setPageActions(
+            hide: { [weak store] in store?.toggleVisibility() },
+            playback: { [weak store] in store?.togglePlayback() },
+            slower: { [weak store] in store?.slowerPlayback() },
+            faster: { [weak store] in store?.fasterPlayback() },
+            speed: { [weak store] speed in store?.setPlaybackSpeed(speed) },
+            previous: { [weak store] in store?.previousPage() },
+            next: { [weak store] in store?.nextPage() },
+            overview: { [weak store] in
+                if let store { OverviewWindow.shared.show(store: store) }
+            }
+        )
+        DispatchQueue.main.async { [weak store] in
+            store?.showCurrentReadingWindow()
+        }
         
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
@@ -140,6 +155,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Group 3: Display settings
         menu.addItem(buildDisplayModeSubmenu())
+        menu.addItem(buildOpacitySubmenu())
         if store.displayMode == .center && NSScreen.screens.count > 1 {
             menu.addItem(buildScreenSubmenu())
         }
@@ -191,6 +207,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         centerItem.state = store.displayMode == .center ? .on : .off
         submenu.addItem(centerItem)
         
+        item.submenu = submenu
+        return item
+    }
+
+    private func buildOpacitySubmenu() -> NSMenuItem {
+        let item = NSMenuItem(title: "透明度", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        for value in [0.3, 0.5, 0.7, 0.9] {
+            let opacityItem = NSMenuItem(title: "(Int(value * 100))%", action: #selector(setOpacity(_:)), keyEquivalent: "")
+            opacityItem.target = self
+            opacityItem.representedObject = value
+            submenu.addItem(opacityItem)
+        }
         item.submenu = submenu
         return item
     }
@@ -257,6 +286,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func nextPage() { store.nextPage() }
     @objc private func setDisplayModeRight() { store.displayMode = .right }
     @objc private func setDisplayModeCenter() { store.displayMode = .center }
+
+    @objc private func setOpacity(_ sender: NSMenuItem) {
+        guard let value = sender.representedObject as? Double else { return }
+        CenterDisplayWindow.shared.setOpacity(CGFloat(value))
+    }
     
     @objc private func toggleScreen(_ sender: NSMenuItem) {
         guard let uuid = sender.representedObject as? String else { return }

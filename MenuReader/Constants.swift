@@ -7,6 +7,7 @@ enum UserDefaultsKey {
     static let pageInterval = "reader.pageInterval"
     static let selectedScreenIDs = "reader.selectedScreenIDs"
     static let launchAtLogin = "reader.launchAtLogin"
+    static let panelOpacity = "reader.panelOpacity"
 }
 
 enum ReaderConstants {
